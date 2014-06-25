@@ -1,4 +1,9 @@
 
+printf "[init::gama]"
+
+fix = loadstring "function quick_class(classname, super) return class(classname, super) end "
+fix!
+
 export gama = gama or {}
 gama.VERSION = "0.1.0"
 --gama.HOST = "gamagama.cn"
@@ -12,7 +17,7 @@ gama.getAssetUrl = (id)-> "http://#{gama.HOST}/#{id}"
 -- @return desc json url
 gama.getDescUrl = (id)-> "http://#{gama.HOST}/#{id}.json"
 
-gama.animation = require "framework.gama.animation" unless gama.animation
+gama.animation = require "gama.animation" unless gama.animation
 
 
 
