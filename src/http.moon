@@ -8,9 +8,11 @@ DUMMY_CALLBACK = -> -- just do nothing
 --- getJSON
 -- load json from the given url
 -- @param url target url
--- @param callback
+-- @param callback, signature: callback(err, data)
 http.getJSON = (url, callback)->
-
+  http.request url, (err, data)->
+    return callback err if err and type(callback) == "function"
+    return callback(json.decode(data)) if type(callback) == "function"
   return
 
 --- request
@@ -26,15 +28,36 @@ http.request = (option, callback)->
 
   method = if(string.upper(option.method or "") == "GET") then kCCHTTPRequestMethodGET else kCCHTTPRequestMethodPOST
 
+  printf "[http::request] method:#{method} url:#{url}"
+
   callback = callback or DUMMY_CALLBACK
 
+  -- 为当前的调用构建一个闭包
+  innerCallback = (event) ->
 
-  innerCallback = (event, index, dumpResponse) ->
-    printf "[http::innerCallback] index:#{index}  event:"
-    dump event
+    response = event.request  -- NOTE: event.request 明明是一个 response 对象啊！
+
+    statusCode = response\getResponseStatusCode!
+
+    printf "[http::response::innerCallback] event:#{event.name}, status:#{statusCode}"
+
+    if event and event.name == "completed" -- http response completed
+      if statusCode == 200  -- server returns OK
+        callback(nil, response\getResponseData!)  if type(callback) == "function"
+      else                  -- server says not good
+        callback "bad server response. status:#{statusCode}" if type(callback) == "function"
+    else
+      callback "http request failed. error(#{response\getErrorCode!}) : #{request\getErrorMessage!}" if type(callback) == "function"
     return
 
-  return CCHTTPRequest\createWithUrl(callback, url, method)
+  req = CCHTTPRequest\createWithUrl(innerCallback, url, method)
+  if req then
+    req\setTimeout(option.waittime or  30)
+    req\start()
+  else
+    callback "fail to init http request" if callback
+
+  return
 
 
 return http
