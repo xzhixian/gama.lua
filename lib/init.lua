@@ -1,4 +1,4 @@
-printf("[init::gama]")
+printf("[gama] init")
 local fix = loadstring("function quick_class(classname, super) return class(classname, super) end ")
 fix()
 JSON = JSON or { }
@@ -36,9 +36,23 @@ end
 gama.getDescUrl = function(id)
   return "http://" .. tostring(gama.HOST) .. "/" .. tostring(id) .. ".json"
 end
-if not (gama.animation) then
-  gama.animation = require("gama.animation")
+game.getAssetInfo = function(id, callback)
+  asset(type(callback) == "function", "invalid callback: " .. tostring(callback))
+  if not (id) then
+    return callback("invalid id: " .. tostring(id))
+  end
+  local url = gama.getAssetUrl(id)
+  gama.http.getJSON(url, function(err, data)
+    printf("[init::getAssetInfo] err:" .. tostring(err) .. ", data:")
+    dump(data)
+  end)
 end
 if not (gama.http) then
   gama.http = require("gama.http")
+end
+if not (gama.asset) then
+  gama.asset = require("gama.asset")
+end
+if not (gama.animation) then
+  gama.animation = require("gama.animation")
 end

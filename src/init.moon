@@ -1,12 +1,14 @@
 
-printf "[init::gama]"
+printf "[gama] init"
 
 ------------ 补丁 : start --------------------
 
+--###
 -- 解决 quick-x/framework/functions.lua 中使用 `class` 关键词做方法名，导致 moonscript class() 解析错误的问题
 fix = loadstring "function quick_class(classname, super) return class(classname, super) end "
 fix!
 
+--###
 -- quick-x d的 json 封装无法将错误抛出给应用层面，所以参考 JavaScript 的方式重新封装
 export JSON = JSON or {}
 cjson = require("cjson")
@@ -45,8 +47,6 @@ JSON.parse = (text, callback)->
 
 ------------ 补丁 : end   --------------------
 
-
-
 export gama = gama or {}
 gama.VERSION = "0.1.0"
 --gama.HOST = "gamagama.cn"
@@ -61,10 +61,31 @@ gama.getAssetUrl = (id)-> "http://#{gama.HOST}/#{id}"
 gama.getDescUrl = (id)-> "http://#{gama.HOST}/#{id}.json"
 
 
+game.getAssetInfo = (id, callback)->
+  -- make sure callback is supplied
+  asset type(callback) == "function", "invalid callback: #{callback}"
+  -- make sure id is given
+  return callback "invalid id: #{id}" unless id
+
+  url = gama.getAssetUrl id
+
+  gama.http.getJSON url, (err, data)->
+    printf "[init::getAssetInfo] err:#{err}, data:"
+    dump data
+    return
+
+  return
+
+
+
+
+--###
 -- bootstrap modules
+-- NOTE: require 的次序不能乱
+gama.http = require "gama.http" unless gama.http
+gama.asset = require "gama.asset" unless gama.asset
 gama.animation = require "gama.animation" unless gama.animation
 
-gama.http = require "gama.http" unless gama.http
 
 
 
