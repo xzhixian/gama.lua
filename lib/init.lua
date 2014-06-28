@@ -29,7 +29,7 @@ JSON.parse = function(text, callback)
 end
 gama = gama or { }
 gama.VERSION = "0.1.0"
-gama.HOST = "gamagama.cn"
+gama.HOST = "127.0.0.1:8080"
 gama.getAssetUrl = function(id)
   return "http://" .. tostring(gama.HOST) .. "/" .. tostring(id)
 end
@@ -42,7 +42,7 @@ gama.getAssetInfo = function(id, callback)
   if id == nil or id == "" then
     return callback("invalid id: " .. tostring(id))
   end
-  local url = gama.getAssetUrl(id)
+  local url = gama.getDescUrl(id)
   gama.http.getJSON(url, function(err, data)
     printf("[init::getAssetInfo] err:" .. tostring(err) .. ", data:")
     dump(data)

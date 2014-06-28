@@ -49,8 +49,8 @@ JSON.parse = (text, callback)->
 
 export gama = gama or {}
 gama.VERSION = "0.1.0"
-gama.HOST = "gamagama.cn"
---gama.HOST = "localhost:8080"
+--gama.HOST = "gamagama.cn"
+gama.HOST = "127.0.0.1:8080"
 
 gama.getAssetUrl = (id)-> "http://#{gama.HOST}/#{id}"
 
@@ -70,8 +70,9 @@ gama.getAssetInfo = (id, callback)->
   -- make sure id is given
   return callback "invalid id: #{id}" if id == nil or id == ""
 
-  url = gama.getAssetUrl id
+  url = gama.getDescUrl id
 
+  --gama.http.getJSON "http://www.baidu.com", (err, data)->
   gama.http.getJSON url, (err, data)->
     printf "[init::getAssetInfo] err:#{err}, data:"
     dump data

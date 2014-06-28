@@ -10,9 +10,14 @@ DUMMY_CALLBACK = -> -- just do nothing
 -- @param url target url
 -- @param callback, signature: callback(err, data)
 http.getJSON = (url, callback)->
-  http.request url, (err, data)->
+  http.request url, (err, text)->
     return callback err if err and type(callback) == "function"
-    return callback(json.decode(data)) if type(callback) == "function"
+
+    JSON.parse text, (err, data)->
+      --printf "[http::getJSON] err:#{err}, data:#{data}"
+      return callback err if err and type(callback) == "function"
+      return callback(nil, data) if type(callback) == "function"
+
   return
 
 --- request
@@ -26,7 +31,7 @@ http.request = (option, callback)->
 
   assert url, "invalid url"
 
-  method = if(string.upper(option.method or "") == "GET") then kCCHTTPRequestMethodGET else kCCHTTPRequestMethodPOST
+  method = if(string.upper(option.method or "") == "POST") then kCCHTTPRequestMethodPOST else kCCHTTPRequestMethodGET
 
   printf "[http::request] method:#{method} url:#{url}"
 

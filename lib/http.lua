@@ -2,23 +2,28 @@ local http = { }
 local DUMMY_CALLBACK
 DUMMY_CALLBACK = function() end
 http.getJSON = function(url, callback)
-  http.request(url, function(err, data)
+  http.request(url, function(err, text)
     if err and type(callback) == "function" then
       return callback(err)
     end
-    if type(callback) == "function" then
-      return callback(json.decode(data))
-    end
+    return JSON.parse(text, function(err, data)
+      if err and type(callback) == "function" then
+        return callback(err)
+      end
+      if type(callback) == "function" then
+        return callback(nil, data)
+      end
+    end)
   end)
 end
 http.request = function(option, callback)
   local url = option.url or option
   assert(url, "invalid url")
   local method
-  if (string.upper(option.method or "") == "GET") then
-    method = kCCHTTPRequestMethodGET
-  else
+  if (string.upper(option.method or "") == "POST") then
     method = kCCHTTPRequestMethodPOST
+  else
+    method = kCCHTTPRequestMethodGET
   end
   printf("[http::request] method:" .. tostring(method) .. " url:" .. tostring(url))
   callback = callback or DUMMY_CALLBACK
