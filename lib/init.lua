@@ -29,16 +29,17 @@ JSON.parse = function(text, callback)
 end
 gama = gama or { }
 gama.VERSION = "0.1.0"
-gama.HOST = "localhost:8080"
+gama.HOST = "gamagama.cn"
 gama.getAssetUrl = function(id)
   return "http://" .. tostring(gama.HOST) .. "/" .. tostring(id)
 end
 gama.getDescUrl = function(id)
   return "http://" .. tostring(gama.HOST) .. "/" .. tostring(id) .. ".json"
 end
-game.getAssetInfo = function(id, callback)
-  asset(type(callback) == "function", "invalid callback: " .. tostring(callback))
-  if not (id) then
+gama.getAssetInfo = function(id, callback)
+  printf("[init::method] " .. tostring(type(id)))
+  assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
+  if id == nil or id == "" then
     return callback("invalid id: " .. tostring(id))
   end
   local url = gama.getAssetUrl(id)
@@ -49,9 +50,6 @@ game.getAssetInfo = function(id, callback)
 end
 if not (gama.http) then
   gama.http = require("gama.http")
-end
-if not (gama.asset) then
-  gama.asset = require("gama.asset")
 end
 if not (gama.animation) then
   gama.animation = require("gama.animation")

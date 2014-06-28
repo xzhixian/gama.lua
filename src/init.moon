@@ -49,8 +49,8 @@ JSON.parse = (text, callback)->
 
 export gama = gama or {}
 gama.VERSION = "0.1.0"
---gama.HOST = "gamagama.cn"
-gama.HOST = "localhost:8080"
+gama.HOST = "gamagama.cn"
+--gama.HOST = "localhost:8080"
 
 gama.getAssetUrl = (id)-> "http://#{gama.HOST}/#{id}"
 
@@ -60,12 +60,15 @@ gama.getAssetUrl = (id)-> "http://#{gama.HOST}/#{id}"
 -- @return desc json url
 gama.getDescUrl = (id)-> "http://#{gama.HOST}/#{id}.json"
 
+--- gama.getAssetInfo
+-- load asset information from the server
+gama.getAssetInfo = (id, callback)->
+  printf "[init::method] #{type(id)}"
 
-game.getAssetInfo = (id, callback)->
   -- make sure callback is supplied
-  asset type(callback) == "function", "invalid callback: #{callback}"
+  assert type(callback) == "function", "invalid callback: #{callback}"
   -- make sure id is given
-  return callback "invalid id: #{id}" unless id
+  return callback "invalid id: #{id}" if id == nil or id == ""
 
   url = gama.getAssetUrl id
 
@@ -76,14 +79,10 @@ game.getAssetInfo = (id, callback)->
 
   return
 
-
-
-
 --###
 -- bootstrap modules
 -- NOTE: require 的次序不能乱
 gama.http = require "gama.http" unless gama.http
-gama.asset = require "gama.asset" unless gama.asset
 gama.animation = require "gama.animation" unless gama.animation
 
 

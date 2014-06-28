@@ -1,0 +1,92 @@
+{
+  "id": "AfMzABi",
+  "width": 256,
+  "height": 256,
+  "texture" : {
+    "pkm" : ["0.pkm"],
+    "pvrct4" : ["0.pvrct4"],
+    "png8" : ["0.png8"]
+  },
+  "arrangment": [
+    {
+      "filename": "frame0.png",
+      "l": 0,
+      "t": 0,
+      "w": 57,
+      "h": 73,
+      "url": "/resource/FjXLifh/animations/AfMzABi/frame0.png"
+    },
+    {
+      "filename": "frame1.png",
+      "l": 0,
+      "t": 74,
+      "w": 57,
+      "h": 73,
+      "url": "/resource/FjXLifh/animations/AfMzABi/frame1.png"
+    },
+    {
+      "filename": "frame2.png",
+      "l": 0,
+      "t": 148,
+      "w": 57,
+      "h": 73,
+      "url": "/resource/FjXLifh/animations/AfMzABi/frame2.png"
+    },
+    {
+      "filename": "frame3.png",
+      "l": 58,
+      "t": 0,
+      "w": 57,
+      "h": 73,
+      "url": "/resource/FjXLifh/animations/AfMzABi/frame3.png"
+    },
+    {
+      "filename": "frame4.png",
+      "l": 116,
+      "t": 0,
+      "w": 57,
+      "h": 73,
+      "url": "/resource/FjXLifh/animations/AfMzABi/frame4.png"
+    },
+    {
+      "filename": "frame5.png",
+      "l": 174,
+      "t": 0,
+      "w": 57,
+      "h": 73,
+      "url": "/resource/FjXLifh/animations/AfMzABi/frame5.png"
+    },
+    {
+      "filename": "frame6.png",
+      "l": 58,
+      "t": 74,
+      "w": 57,
+      "h": 73,
+      "url": "/resource/FjXLifh/animations/AfMzABi/frame6.png"
+    },
+    {
+      "filename": "frame7.png",
+      "l": 58,
+      "t": 148,
+      "w": 57,
+      "h": 73,
+      "url": "/resource/FjXLifh/animations/AfMzABi/frame7.png"
+    },
+    {
+      "filename": "frame8.png",
+      "l": 116,
+      "t": 74,
+      "w": 57,
+      "h": 73,
+      "url": "/resource/FjXLifh/animations/AfMzABi/frame8.png"
+    },
+    {
+      "filename": "frame9.png",
+      "l": 174,
+      "t": 74,
+      "w": 57,
+      "h": 73,
+      "url": "/resource/FjXLifh/animations/AfMzABi/frame9.png"
+    }
+  ]
+}
