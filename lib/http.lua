@@ -18,7 +18,9 @@ http.getJSON = function(url, callback)
 end
 http.request = function(option, callback)
   local url = option.url or option
-  assert(url, "invalid url")
+  assert(url, "invalid url:" .. tostring(url))
+  callback = callback or DUMMY_CALLBACK
+  assert(type(callback) == "function", "invalid callback:" .. tostring(callback))
   local method
   if (string.upper(option.method or "") == "POST") then
     method = kCCHTTPRequestMethodPOST
@@ -29,23 +31,23 @@ http.request = function(option, callback)
   callback = callback or DUMMY_CALLBACK
   local innerCallback
   innerCallback = function(event)
+    printf("[http::response::innerCallback] event:" .. tostring(event.name))
     local response = event.request
-    local statusCode = response:getResponseStatusCode()
+    local statusCode
+    if event.name == "failed" then
+      statusCode = -1
+    else
+      statusCode = response:getResponseStatusCode()
+    end
     printf("[http::response::innerCallback] event:" .. tostring(event.name) .. ", status:" .. tostring(statusCode))
     if event and event.name == "completed" then
       if statusCode == 200 then
-        if type(callback) == "function" then
-          callback(nil, response:getResponseData())
-        end
+        callback(nil, response:getResponseData())
       else
-        if type(callback) == "function" then
-          callback("bad server response. status:" .. tostring(statusCode))
-        end
+        callback("bad server response. status:" .. tostring(statusCode))
       end
     else
-      if type(callback) == "function" then
-        callback("http request failed. error(" .. tostring(response:getErrorCode()) .. ") : " .. tostring(request:getErrorMessage()))
-      end
+      callback("http request failed. error(" .. tostring(response:getErrorCode()) .. ") : " .. tostring(response:getErrorMessage()))
     end
   end
   local req = CCHTTPRequest:createWithUrl(innerCallback, url, method)
@@ -53,9 +55,7 @@ http.request = function(option, callback)
     req:setTimeout(option.waittime or 30)
     req:start()
   else
-    if callback then
-      callback("fail to init http request")
-    end
+    callback("fail to init http request")
   end
 end
 return http

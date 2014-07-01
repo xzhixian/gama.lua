@@ -29,7 +29,10 @@ http.request = (option, callback)->
 
   url = option.url or option
 
-  assert url, "invalid url"
+  assert url, "invalid url:#{url}"
+
+  callback = callback or DUMMY_CALLBACK
+  assert(type(callback) == "function", "invalid callback:#{callback}")
 
   method = if(string.upper(option.method or "") == "POST") then kCCHTTPRequestMethodPOST else kCCHTTPRequestMethodGET
 
@@ -40,27 +43,28 @@ http.request = (option, callback)->
   -- 为当前的调用构建一个闭包
   innerCallback = (event) ->
 
+    printf "[http::response::innerCallback] event:#{event.name}"
     response = event.request  -- NOTE: event.request 明明是一个 response 对象啊！
 
-    statusCode = response\getResponseStatusCode!
+    statusCode = if event.name == "failed" then -1 else response\getResponseStatusCode!
 
     printf "[http::response::innerCallback] event:#{event.name}, status:#{statusCode}"
 
     if event and event.name == "completed" -- http response completed
       if statusCode == 200  -- server returns OK
-        callback(nil, response\getResponseData!)  if type(callback) == "function"
+        callback(nil, response\getResponseData!)
       else                  -- server says not good
-        callback "bad server response. status:#{statusCode}" if type(callback) == "function"
+        callback "bad server response. status:#{statusCode}"
     else
-      callback "http request failed. error(#{response\getErrorCode!}) : #{request\getErrorMessage!}" if type(callback) == "function"
+      callback "http request failed. error(#{response\getErrorCode!}) : #{response\getErrorMessage!}"
     return
 
   req = CCHTTPRequest\createWithUrl(innerCallback, url, method)
   if req then
     req\setTimeout(option.waittime or  30)
-    req\start()
+    req\start!
   else
-    callback "fail to init http request" if callback
+    callback "fail to init http request"
 
   return
 
