@@ -8,27 +8,35 @@ DUMMY_CALLBACK = function() end
 asset.getURLById = function(id)
   return "http://" .. tostring(gama.HOST) .. "/fetch/" .. tostring(id)
 end
-asset.getPathToFileById = function(id)
-  return tostring(ROOT_PATH) .. tostring(id)
+asset.getPathToFileById = function(id, extname)
+  if extname == nil then
+    extname = ""
+  end
+  return tostring(ROOT_PATH) .. tostring(id) .. tostring(extname)
 end
-asset.fetchById = function(id, callback)
+asset.fetchById = function(id, extname, callback)
   printf("[asset::fetchById] id:" .. tostring(id))
+  if type(extname) == "function" and callback == nil then
+    callback = extname
+    extname = ""
+  end
   callback = callback or DUMMY_CALLBACK
   assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
+  extname = tostring(extname)
   id = string.trim(tostring(id or ""))
   if id == "" then
     return callback("missing id")
   end
-  local destination = asset.getPathToFileById(id)
+  local destination = asset.getPathToFileById(id, extname)
   if io.exists(destination) then
-    return callback(nil, id)
+    return callback(nil, destination)
   end
   local remote = asset.getURLById(id)
   gama.http.download(remote, destination, function(err)
     if err then
       return callback(err)
     end
-    return callback(nil, id)
+    return callback(nil, destination)
   end)
 end
 asset.fetchByIds = function(ids, callback)

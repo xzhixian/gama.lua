@@ -15,27 +15,35 @@ DUMMY_CALLBACK = -> -- just do nothing
 
 asset.getURLById = (id)-> "http://#{gama.HOST}/fetch/#{id}"
 
-asset.getPathToFileById = (id)-> "#{ROOT_PATH}#{id}"
+asset.getPathToFileById = (id, extname = "")-> "#{ROOT_PATH}#{id}#{extname}"
 
 --- fetchById
 -- 根据给定的 id 从远程服务器上拉回来素材，如果本地已经存在德话就不拉了
 -- @param id, asset id
--- @param callback, signature: callback(err, assetId)
-asset.fetchById = (id, callback)->
+-- @param extname , extension name 由于 cocos2dx 的 addImageAsync 是根据文件后缀名来判断数据类型，因此在这里先补上后缀名
+-- @param callback, signature: callback(err, pathToFile)
+asset.fetchById = (id, extname, callback)->
 
   printf "[asset::fetchById] id:#{id}"
+
+  if type(extname) == "function" and callback == nil
+    callback = extname
+    extname = ""
+
 
   -- make sure callback is firable
   callback = callback or DUMMY_CALLBACK
   assert(type(callback) == "function", "invalid callback: #{callback}")
 
+  extname = "#{extname}"
+
   id = string.trim("#{id or ""}")
   return callback "missing id" if id == ""
 
-  destination = asset.getPathToFileById id
+  destination = asset.getPathToFileById id, extname
 
   -- required file already exists in local
-  return callback nil, id if io.exists(destination)
+  return callback nil, destination if io.exists(destination)
 
   remote = asset.getURLById(id)
 
@@ -43,7 +51,7 @@ asset.fetchById = (id, callback)->
     return callback err if err
 
     -- remote file downloaded
-    return callback nil, id
+    return callback nil, destination
 
   return
 

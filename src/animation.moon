@@ -10,13 +10,22 @@ DUMMY_CALLBACK = ->
 
 EMPTY_TABLE = {}
 
-TEXT_FIELD_ID = switch device.platform
-  when "android"
-    "pkm"
-  when "ios"
-    "pvrct4"
-  else
-    "png8"
+EXTNAME = ".png"
+
+TEXT_FIELD_ID = "png8"
+
+-- TODO:
+-- cocos2dx/addImageAsync doens't support etc or pvrct4,
+-- only texture2D have sync method: initWithETCFile, initWithPVRCTFile
+-- so need a custom patch on addImageAsync
+
+--TEXT_FIELD_ID = switch device.platform
+  --when "android"
+    --"pkm"
+  --when "ios"
+    --"pvrct4"
+  --else
+    --"png8"
 
 --- loadById
 -- 根据给定的 id 载入动画
@@ -31,6 +40,7 @@ animation.loadById = (id, callback)->
   id = string.trim("#{id or ""}")
   return callback "missing id" if id == ""
 
+  -- read the asset config json
   gama.asset.readById id, (err, text)->
     return callback err if err
 
@@ -39,19 +49,17 @@ animation.loadById = (id, callback)->
       -- work out required texture ids
       textureIds = (data["texture"] or EMPTY_TABLE)[TEXT_FIELD_ID]
 
-      printf "[animation::loadById] textureIds"
-      dump textureIds
-
       unless type(textureIds) == "table" and #textureIds > 0
         return callback "invalid textureIds:#{textureIds}, field:#{TEXT_FIELD_ID}"
 
       -- fetch texture assets
       processTexture = (textureId, next)->
-        gama.asset.fetchById textureId, (err, id)->
+        gama.asset.fetchById textureId, EXTNAME, (err, filepath)->
           return next err if err
-          filepath = gama.asset.getPathToFileById id
           printf "[animation::loadById] filepath:#{filepath}"
-          display.addImageAsync filepath, ->
+          display.addImageAsync filepath, (funcname, texture)->
+            printf "[animation::processTexture] texture init:#{texture}"
+            return
           return next!
 
       async.eachSeries textureIds, processTexture, (err)->
