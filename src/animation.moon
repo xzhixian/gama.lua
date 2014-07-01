@@ -54,12 +54,10 @@ animation.loadById = (id, callback)->
 
       -- fetch texture assets
       processTexture = (textureId, next)->
-        gama.asset.fetchById textureId, EXTNAME, (err, filepath)->
+
+        gama.asset.getTextureById textureId, EXTNAME, (err, texture2D)->
           return next err if err
-          printf "[animation::loadById] filepath:#{filepath}"
-          display.addImageAsync filepath, (funcname, texture)->
-            printf "[animation::processTexture] texture init:#{texture}"
-            return
+          printf "[animation::loadById] texture2D:#{texture2D}"
           return next!
 
       async.eachSeries textureIds, processTexture, (err)->

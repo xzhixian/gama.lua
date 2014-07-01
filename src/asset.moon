@@ -2,6 +2,7 @@
 -- 对接 gama 的 asset 素材池
 
 async = require "async"
+sharedTextureCache = CCTextureCache\sharedTextureCache!
 
 asset = {}
 
@@ -29,7 +30,6 @@ asset.fetchById = (id, extname, callback)->
   if type(extname) == "function" and callback == nil
     callback = extname
     extname = ""
-
 
   -- make sure callback is firable
   callback = callback or DUMMY_CALLBACK
@@ -80,8 +80,51 @@ asset.readById = (id, callback)->
 
   return
 
+--- getTextureById
+-- 获取纹理
+-- @param id asset id
+-- @param extname
+-- @param callback , signature: callback(err, texture2D)
+asset.getTextureById = (id, extname, callback)->
+
+  printf "[asset::getTextureById] id:#{id}"
+
+  if type(extname) == "function" and callback == nil
+    callback = extname
+    extname = ""
+
+  -- make sure callback is firable
+  callback = callback or DUMMY_CALLBACK
+  assert(type(callback) == "function", "invalid callback: #{callback}")
+
+  extname = "#{extname}"
+
+  pathToFile = asset.getPathToFileById id, extname
+
+  printf "[asset::getTextureById] pathToFile:#{pathToFile}"
+
+  texture = sharedTextureCache\textureForKey(pathToFile)
+
+  -- require texture is avilable
+  if texture
+    printf "[asset::getTextureById] texture avilable for id:#{id}#{extname}"
+    return  callback(nil, texture)
+
+  -- fetch the asset from remote server
+  asset.fetchById id, extname, (err, pathToFile)->
+    return callback err if err
+
+    display.addImageAsync pathToFile, (funcname, texture)->
+      printf "[asset::getTextureById] texture init:#{texture}"
+
+      return callback(nil, texture) if texture
+
+      return callback "fail to load texture:#{id}#{extname}"
+
+    return
+
+  return
+
+
 
 return asset
-
-
-

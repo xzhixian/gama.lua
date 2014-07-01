@@ -23,14 +23,11 @@ animation.loadById = function(id, callback)
       end
       local processTexture
       processTexture = function(textureId, next)
-        return gama.asset.fetchById(textureId, EXTNAME, function(err, filepath)
+        return gama.asset.getTextureById(textureId, EXTNAME, function(err, texture2D)
           if err then
             return next(err)
           end
-          printf("[animation::loadById] filepath:" .. tostring(filepath))
-          display.addImageAsync(filepath, function(funcname, texture)
-            printf("[animation::processTexture] texture init:" .. tostring(texture))
-          end)
+          printf("[animation::loadById] texture2D:" .. tostring(texture2D))
           return next()
         end)
       end

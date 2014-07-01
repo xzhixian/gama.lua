@@ -1,4 +1,5 @@
 local async = require("async")
+local sharedTextureCache = CCTextureCache:sharedTextureCache()
 local asset = { }
 local ROOT_PATH = tostring(device.cachePath) .. "gama" .. tostring(device.directorySeparator)
 os.execute("mkdir -p " .. tostring(ROOT_PATH))
@@ -55,6 +56,35 @@ asset.readById = function(id, callback)
       return callback(err)
     end
     return callback(nil, io.readfile(asset.getPathToFileById(id)))
+  end)
+end
+asset.getTextureById = function(id, extname, callback)
+  printf("[asset::getTextureById] id:" .. tostring(id))
+  if type(extname) == "function" and callback == nil then
+    callback = extname
+    extname = ""
+  end
+  callback = callback or DUMMY_CALLBACK
+  assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
+  extname = tostring(extname)
+  local pathToFile = asset.getPathToFileById(id, extname)
+  printf("[asset::getTextureById] pathToFile:" .. tostring(pathToFile))
+  local texture = sharedTextureCache:textureForKey(pathToFile)
+  if texture then
+    printf("[asset::getTextureById] texture avilable for id:" .. tostring(id) .. tostring(extname))
+    return callback(nil, texture)
+  end
+  asset.fetchById(id, extname, function(err, pathToFile)
+    if err then
+      return callback(err)
+    end
+    display.addImageAsync(pathToFile, function(funcname, texture)
+      printf("[asset::getTextureById] texture init:" .. tostring(texture))
+      if texture then
+        return callback(nil, texture)
+      end
+      return callback("fail to load texture:" .. tostring(id) .. tostring(extname))
+    end)
   end)
 end
 return asset
