@@ -58,4 +58,18 @@ http.request = function(option, callback)
     callback("fail to init http request")
   end
 end
+http.download = function(url, saveTo, callback)
+  callback = callback or DUMMY_CALLBACK
+  assert(type(callback) == "function", "invalid callback:" .. tostring(callback))
+  http.request(url, function(err, data)
+    if err then
+      return callback(err)
+    end
+    if io.writefile(saveTo, data) then
+      return callback(nil)
+    else
+      return callback("http.download fail to open file for writing. url:" .. tostring(url))
+    end
+  end)
+end
 return http

@@ -19,7 +19,7 @@ TEXT_FIELD_ID = switch device.platform
     "png8"
 
 --- loadById
---
+-- 根据给定的 id 载入动画
 -- @param id asset id
 -- @param callback, callback method, signature: callback(err, animation)
 animation.loadById = (id, callback)->
@@ -31,34 +31,36 @@ animation.loadById = (id, callback)->
   id = string.trim("#{id or ""}")
   return callback "missing id" if id == ""
 
-  url = gama.getDescUrl id
-
-  printf "[animation::loadById] url:#{url}"
-
-  gama.http.getJSON url, (err, data)->
+  gama.asset.readById id, (err, text)->
     return callback err if err
 
-    printf "[animation::loadById] data:"
-    dump data
+    JSON.parse text, (err, data)->
 
-    -- work out required texture ids
-    textureIds = (data["texture"] or EMPTY_TABLE)[TEXT_FIELD_ID]
+      -- work out required texture ids
+      textureIds = (data["texture"] or EMPTY_TABLE)[TEXT_FIELD_ID]
 
-    unless type(textureIds) == table and #textureIds > 0
-      return callback "invalid textureIds:#{textureIds}, field:#{TEXT_FIELD_ID}"
+      printf "[animation::loadById] textureIds"
+      dump textureIds
 
-    -- fetch texture assets
+      unless type(textureIds) == "table" and #textureIds > 0
+        return callback "invalid textureIds:#{textureIds}, field:#{TEXT_FIELD_ID}"
 
+      -- fetch texture assets
+      processTexture = (textureId, next)->
+        gama.asset.fetchById textureId, (err, id)->
+          return next err if err
+          filepath = gama.asset.getPathToFileById id
+          printf "[animation::loadById] filepath:#{filepath}"
+          display.addImageAsync filepath, ->
+          return next!
 
-    -- load into texture cache
+      async.eachSeries textureIds, processTexture, (err)->
+        return callback err if err
+        return callback!
 
-    callback nil
-
-
+      return
+    return
   return
-
-
-
 
 return animation
 

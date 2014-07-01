@@ -36,8 +36,11 @@ JSON.parse = (text, callback)->
   if type(callback) == "function"
     -- simulate async
     status, result = pcall(cjson.decode, text)
+
+    printf "[init::JSON::parse] status:#{status}, result:#{result}"
+
     if status
-      callback nil, result
+      callback(nil, result)
     else
       callback "JSON.parse failed, error:#{result}"
   else
@@ -52,38 +55,11 @@ gama.VERSION = "0.1.0"
 --gama.HOST = "gamagama.cn"
 gama.HOST = "127.0.0.1:8080"
 
-gama.getAssetUrl = (id)-> "http://#{gama.HOST}/#{id}"
-
---- getDescUrl
--- this is a temporary solution
--- @param id asset id
--- @return desc json url
-gama.getDescUrl = (id)-> "http://#{gama.HOST}/#{id}.json"
-
---- gama.getAssetInfo
--- load asset information from the server
-gama.getAssetInfo = (id, callback)->
-  printf "[init::method] #{type(id)}"
-
-  -- make sure callback is supplied
-  assert type(callback) == "function", "invalid callback: #{callback}"
-  -- make sure id is given
-  return callback "invalid id: #{id}" if id == nil or id == ""
-
-  url = gama.getDescUrl id
-
-  --gama.http.getJSON "http://www.baidu.com", (err, data)->
-  gama.http.getJSON url, (err, data)->
-    printf "[init::getAssetInfo] err:#{err}, data:"
-    dump data
-    return
-
-  return
-
 --###
 -- bootstrap modules
 -- NOTE: require 的次序不能乱
 gama.http = require "gama.http" unless gama.http
+gama.asset = require "gama.asset" unless gama.asset
 gama.animation = require "gama.animation" unless gama.animation
 
 

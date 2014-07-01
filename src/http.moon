@@ -68,6 +68,21 @@ http.request = (option, callback)->
 
   return
 
+http.download = (url, saveTo, callback)->
+
+  callback = callback or DUMMY_CALLBACK
+  assert(type(callback) == "function", "invalid callback:#{callback}")
+
+  http.request url, (err, data)->
+    return callback err if err
+
+    if io.writefile saveTo, data
+      return callback nil
+    else
+      return callback "http.download fail to open file for writing. url:#{url}"
+
+    return
+  return
 
 return http
 
