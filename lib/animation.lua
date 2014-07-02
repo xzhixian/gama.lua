@@ -1,4 +1,6 @@
 local async = require("async")
+local _ = require("underscore")
+local sharedSpriteFrameCache = CCSpriteFrameCache:sharedSpriteFrameCache()
 local animation = { }
 local DUMMY_CALLBACK
 DUMMY_CALLBACK = function() end
@@ -28,16 +30,41 @@ animation.loadById = function(id, callback)
             return next(err)
           end
           printf("[animation::loadById] texture2D:" .. tostring(texture2D))
-          return next()
+          return next(nil, texture2D)
         end)
       end
-      async.eachSeries(textureIds, processTexture, function(err)
+      async.mapSeries(textureIds, processTexture, function(err, textures)
         if err then
           return callback(err)
         end
-        return callback()
+        printf("[animation::loadById] after texture processed, textures:")
+        dump(textures)
+        local frames = animation.makeSpriteFrames(id, textures, data["arrangment"])
+        printf("[animation::loadById] after texture processed, frames:")
+        dump(frames)
+        animation = display.newAnimation(frames, 0.3 / 8)
+        return callback(nil, animation)
       end)
     end)
+  end)
+end
+animation.makeSpriteFrames = function(assetId, textures, arrangement)
+  local count = 1
+  return _.map(arrangement, function(frameInfo)
+    local frameName = tostring(assetId) .. "/" .. tostring(count)
+    printf("[animation::buildSpriteFrameCache] frameName:" .. tostring(frameName))
+    local frame = sharedSpriteFrameCache / spriteFrameByName(frameName)
+    if frame then
+      printf("[animation::buildSpriteFrameCache] find frame in cache")
+      return frame
+    else
+      printf("[animation::buildSpriteFrameCache] build up from json frameInfo:")
+      dump(frameInfo)
+      local texture = textures[frameInfo.texture]
+      frame = CCSpriteFrame.createWithTexture(texture, CCRect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h))
+      _ = sharedSpriteFrameCache / addSpriteFrame(frame, frameName)
+      return frame
+    end
   end)
 end
 return animation

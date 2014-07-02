@@ -4,6 +4,10 @@
 
 async = require "async"
 
+_ = require "underscore"
+
+sharedSpriteFrameCache = CCSpriteFrameCache\sharedSpriteFrameCache!
+
 animation = {}
 
 DUMMY_CALLBACK = ->
@@ -58,15 +62,53 @@ animation.loadById = (id, callback)->
         gama.asset.getTextureById textureId, EXTNAME, (err, texture2D)->
           return next err if err
           printf "[animation::loadById] texture2D:#{texture2D}"
-          return next!
+          return next(nil, texture2D)
 
-      async.eachSeries textureIds, processTexture, (err)->
+      async.mapSeries textureIds, processTexture, (err, textures)->
         return callback err if err
-        return callback!
 
+        printf "[animation::loadById] after texture processed, textures:"
+        dump textures
+
+        frames = animation.makeSpriteFrames(id, textures, data["arrangment"])
+
+        printf "[animation::loadById] after texture processed, frames:"
+        dump frames
+
+        animation = display.newAnimation(frames, 0.3 / 8)
+
+        callback nil, animation
       return
     return
   return
+
+animation.makeSpriteFrames = (assetId, textures, arrangement)->
+
+  count = 1
+  return _.map arrangement, (frameInfo)->
+
+    frameName = "#{assetId}/#{count}"
+
+    printf "[animation::buildSpriteFrameCache] frameName:#{frameName}"
+
+    frame = sharedSpriteFrameCache/spriteFrameByName(frameName)
+
+    if frame
+      printf "[animation::buildSpriteFrameCache] find frame in cache"
+      return frame
+
+    else
+
+      printf "[animation::buildSpriteFrameCache] build up from json frameInfo:"
+      dump frameInfo
+
+      texture = textures[frameInfo.texture]
+      frame = CCSpriteFrame.createWithTexture(texture, CCRect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h))
+
+      -- push the frame into cache
+      sharedSpriteFrameCache/addSpriteFrame frame, frameName
+
+      return frame
 
 return animation
 
