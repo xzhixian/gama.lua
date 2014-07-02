@@ -91,7 +91,8 @@ animation.makeSpriteFrames = (assetId, textures, arrangement)->
 
     printf "[animation::buildSpriteFrameCache] frameName:#{frameName}"
 
-    frame = sharedSpriteFrameCache/spriteFrameByName(frameName)
+    --frame = sharedSpriteFrameCache/spriteFrameByName(frameName)
+    frame = sharedSpriteFrameCache\spriteFrameByName(frameName)
 
     if frame
       printf "[animation::buildSpriteFrameCache] find frame in cache"
@@ -102,11 +103,14 @@ animation.makeSpriteFrames = (assetId, textures, arrangement)->
       printf "[animation::buildSpriteFrameCache] build up from json frameInfo:"
       dump frameInfo
 
-      texture = textures[frameInfo.texture]
-      frame = CCSpriteFrame.createWithTexture(texture, CCRect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h))
+      -- NOTE: frameInfo.texture is 0-based
+      texture = textures[frameInfo.texture + 1]
+
+      printf "[animation::buildSpriteFrameCache] texture:#{texture}"
+      frame = CCSpriteFrame\createWithTexture(texture, CCRect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h))
 
       -- push the frame into cache
-      sharedSpriteFrameCache/addSpriteFrame frame, frameName
+      sharedSpriteFrameCache\addSpriteFrame frame, frameName
 
       return frame
 
