@@ -43,7 +43,11 @@ animation.loadById = function(id, callback)
         printf("[animation::loadById] after texture processed, frames:")
         dump(frames)
         animation = display.newAnimation(frames, 0.3 / 8)
-        return callback(nil, animation)
+        return callback(nil, {
+          animation,
+          data,
+          textures
+        })
       end)
     end)
   end)

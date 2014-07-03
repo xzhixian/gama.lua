@@ -34,7 +34,7 @@ TEXT_FIELD_ID = "png8"
 --- loadById
 -- 根据给定的 id 载入动画
 -- @param id asset id
--- @param callback, callback method, signature: callback(err, animation)
+-- @param callback, callback method, signature: callback(err, {animation, infoObj, textures})
 animation.loadById = (id, callback)->
 
   -- make sure callback is firable
@@ -77,7 +77,7 @@ animation.loadById = (id, callback)->
 
         animation = display.newAnimation(frames, 0.3 / 8)
 
-        callback nil, animation
+        callback nil, {animation, data, textures}
       return
     return
   return
