@@ -88,10 +88,10 @@ animation.makeSpriteFrames = (assetId, textures, arrangement)->
   return _.map arrangement, (frameInfo)->
 
     frameName = "#{assetId}/#{count}"
+    count += 1
 
     printf "[animation::buildSpriteFrameCache] frameName:#{frameName}"
 
-    --frame = sharedSpriteFrameCache/spriteFrameByName(frameName)
     frame = sharedSpriteFrameCache\spriteFrameByName(frameName)
 
     if frame
@@ -101,7 +101,7 @@ animation.makeSpriteFrames = (assetId, textures, arrangement)->
     else
 
       printf "[animation::buildSpriteFrameCache] build up from json frameInfo:"
-      dump frameInfo
+      --dump frameInfo
 
       -- NOTE: frameInfo.texture is 0-based
       texture = textures[frameInfo.texture + 1]

@@ -52,6 +52,7 @@ animation.makeSpriteFrames = function(assetId, textures, arrangement)
   local count = 1
   return _.map(arrangement, function(frameInfo)
     local frameName = tostring(assetId) .. "/" .. tostring(count)
+    count = count + 1
     printf("[animation::buildSpriteFrameCache] frameName:" .. tostring(frameName))
     local frame = sharedSpriteFrameCache:spriteFrameByName(frameName)
     if frame then
@@ -59,7 +60,6 @@ animation.makeSpriteFrames = function(assetId, textures, arrangement)
       return frame
     else
       printf("[animation::buildSpriteFrameCache] build up from json frameInfo:")
-      dump(frameInfo)
       local texture = textures[frameInfo.texture + 1]
       printf("[animation::buildSpriteFrameCache] texture:" .. tostring(texture))
       frame = CCSpriteFrame:createWithTexture(texture, CCRect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h))
