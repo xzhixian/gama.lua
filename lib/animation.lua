@@ -33,28 +33,33 @@ animation.loadById = function(id, callback)
           return next(nil, texture2D)
         end)
       end
-      async.mapSeries(textureIds, processTexture, function(err, textures)
+      async.mapSeries(textureIds, processTexture, function(err, texture2Ds)
         if err then
           return callback(err)
         end
-        printf("[animation::loadById] after texture processed, textures:")
-        dump(textures)
-        local frames = animation.makeSpriteFrames(id, textures, data["arrangment"])
-        printf("[animation::loadById] after texture processed, frames:")
-        dump(frames)
+        local frames = animation.makeSpriteFrames(id, texture2Ds, data["arrangment"], animation.parsePlayScript(data.playscript))
         animation = display.newAnimation(frames, 0.3 / 8)
         return callback(nil, {
           animation,
           data,
-          textures
+          texture2Ds
         })
       end)
     end)
   end)
 end
-animation.makeSpriteFrames = function(assetId, textures, arrangement)
+animation.parsePlayScript = function(playscript)
+  if not (type(playscript) == "string") then
+    return nil
+  end
+  local result = string.split(playscript, ",")
+  return _.map(result, function(i)
+    return (tonumber(i) or 0) + 1
+  end)
+end
+animation.makeSpriteFrames = function(assetId, textures, arrangement, playscript)
   local count = 1
-  return _.map(arrangement, function(frameInfo)
+  local assetFrames = _.map(arrangement, function(frameInfo)
     local frameName = tostring(assetId) .. "/" .. tostring(count)
     count = count + 1
     printf("[animation::buildSpriteFrameCache] frameName:" .. tostring(frameName))
@@ -71,5 +76,13 @@ animation.makeSpriteFrames = function(assetId, textures, arrangement)
       return frame
     end
   end)
+  if not (type(playscript) == "table" and #playscript > 0) then
+    return assetFrames
+  end
+  local playFrames = { }
+  for i, assetFrameId in ipairs(playscript) do
+    table.insert(playFrames, assetFrames[assetFrameId])
+  end
+  return playFrames
 end
 return animation

@@ -64,28 +64,40 @@ animation.loadById = (id, callback)->
           printf "[animation::loadById] texture2D:#{texture2D}"
           return next(nil, texture2D)
 
-      async.mapSeries textureIds, processTexture, (err, textures)->
+      -- 根据 textureIds 准备好 texture2D 实例
+      async.mapSeries textureIds, processTexture, (err, texture2Ds)->
         return callback err if err
 
-        printf "[animation::loadById] after texture processed, textures:"
-        dump textures
+        --printf "[animation::loadById] after texture processed, texture2Ds:"
+        --dump texture2Ds
 
-        frames = animation.makeSpriteFrames(id, textures, data["arrangment"])
+        frames = animation.makeSpriteFrames(id, texture2Ds, data["arrangment"], animation.parsePlayScript(data.playscript))
 
-        printf "[animation::loadById] after texture processed, frames:"
-        dump frames
+        --printf "[animation::loadById] after texture processed, frames:"
+        --dump frames
 
         animation = display.newAnimation(frames, 0.3 / 8)
 
-        callback nil, {animation, data, textures}
+        callback nil, {animation, data, texture2Ds}
       return
     return
   return
 
-animation.makeSpriteFrames = (assetId, textures, arrangement)->
+-- parse the given playscript to a int array
+-- @return int[], 1-based asset frame list
+animation.parsePlayScript = (playscript)->
+  return nil unless type(playscript) == "string"
+  result = string.split playscript, ","
+  -- NOTE: playscript is 0-based
+  return _.map result, (i)-> (tonumber(i) or 0) + 1
+
+
+-- 根据给定的 texture , arrangement 生产出 sprite frame
+-- @return frames[]
+animation.makeSpriteFrames = (assetId, textures, arrangement, playscript)->
 
   count = 1
-  return _.map arrangement, (frameInfo)->
+  assetFrames = _.map arrangement, (frameInfo)->
 
     frameName = "#{assetId}/#{count}"
     count += 1
@@ -113,6 +125,17 @@ animation.makeSpriteFrames = (assetId, textures, arrangement)->
       sharedSpriteFrameCache\addSpriteFrame frame, frameName
 
       return frame
+
+  -- when there is no playscript, return assetFrames directly
+  return assetFrames unless type(playscript) == "table" and #playscript > 0
+
+  -- build frames according to custom playscript
+  playFrames = {}
+  for i, assetFrameId in ipairs playscript
+    --printf "[animation::makeSpriteFrames] i:#{i}, assetFrameId:#{assetFrameId}"
+    table.insert playFrames, assetFrames[assetFrameId]
+
+  return playFrames
 
 return animation
 

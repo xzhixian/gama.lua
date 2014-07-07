@@ -125,6 +125,5 @@ asset.getTextureById = (id, extname, callback)->
 
   return
 
-
-
 return asset
+
