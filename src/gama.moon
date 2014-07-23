@@ -5,6 +5,7 @@ print "[gama] init"
 
 SpriteFrameCache = cc.SpriteFrameCache\getInstance!
 TextureCache = cc.Director\getInstance!\getTextureCache!
+AnimationCache = cc.AnimationCache\getInstance!
 
 fs = cc.FileUtils\getInstance!
 fs\addSearchPath "gama/"
@@ -13,6 +14,12 @@ fs\addSearchPath "gama/"
 -- value: asset type
 ASSET_ID_TO_TYPE_KV = {}
 
+-- key: asset id
+-- value:
+--    texture :
+--    action :
+ASSET_ID_TO_ANIMATION_KV = {}
+
 DUMMY_CALLBACK = ->
 
 EMPTY_TABLE = {}
@@ -20,6 +27,18 @@ EMPTY_TABLE = {}
 TEXTURE_FIELD_ID = "png_8bit"
 
 SPF = 0.3 / 8
+
+
+class GamaAnimation
+  new: (texture, ccAnimation)=>
+    @texture = texture
+    @ccAnimation = ccAnimation
+
+  playOnTarget: (target)->
+    animate = cc.Animate\create(animation)
+    action = cc.RepeatForever:create(animate)
+    target\runAction(action)
+
 
 ------------ 补丁 : start --------------------
 export gama = gama or {}
@@ -50,38 +69,36 @@ gama.getTypeById = (id)->
   return obj["type"]
 
 
-gama.asset =
+--- getTextureById
+-- 获取纹理
+-- @param id asset id
+-- @param extname
+-- @param callback , signature: callback(err, texture2D)
+gama.getTextureById = (id, callback)->
 
-  --- getTextureById
-  -- 获取纹理
-  -- @param id asset id
-  -- @param extname
-  -- @param callback , signature: callback(err, texture2D)
-  getTextureById: (id, callback)->
+  print "[gama::getTextureById] id:#{id}"
 
-    print "[asset::getTextureById] id:#{id}"
+  -- make sure callback is firable
+  callback = callback or DUMMY_CALLBACK
+  assert(type(callback) == "function", "invalid callback: #{callback}")
 
-    -- make sure callback is firable
-    callback = callback or DUMMY_CALLBACK
-    assert(type(callback) == "function", "invalid callback: #{callback}")
+  pathToFile = gama.getAssetPath id
 
-    pathToFile = gama.getAssetPath id
+  print "[gama::getTextureById] pathToFile:#{pathToFile}"
 
-    print "[asset::getTextureById] pathToFile:#{pathToFile}"
+  texture = TextureCache\getTextureForKey(pathToFile)
 
-    texture = TextureCache\getTextureForKey(pathToFile)
+  -- require texture is avilable
+  if texture
+    print "[gama::getTextureById] texture avilable for id:#{id}#{extname}"
+    return  callback(nil, texture)
 
-    -- require texture is avilable
-    if texture
-      print "[asset::getTextureById] texture avilable for id:#{id}#{extname}"
-      return  callback(nil, texture)
+  return callback "missing file at:#{pathToFile}" unless fs\isFileExist pathToFile
 
-    return callback "missing file at:#{pathToFile}" unless fs\isFileExist pathToFile
+  texture = TextureCache\addImage pathToFile
+  print "[gama::getTextureById] texture:#{texture}"
 
-    texture = TextureCache\addImage pathToFile
-    print "[asset::getTextureById] texture:#{texture}"
-
-    return callback(nil, texture)
+  return callback(nil, texture)
 
 gama.animation =
 
@@ -91,6 +108,10 @@ gama.animation =
     -- make sure callback is firable
     callback = callback or DUMMY_CALLBACK
     assert(type(callback) == "function", "invalid callback: #{callback}")
+
+    if ASSET_ID_TO_ANIMATION_KV[id]
+      print "[gama::animation::getById] found in lua cache:#{id}"
+      return callback nil, ASSET_ID_TO_ANIMATION_KV[id]
 
     data = gama.readJSON id
 
@@ -104,26 +125,20 @@ gama.animation =
     unless type(textureIds) == "table" and #textureIds > 0
       return callback "invalid textureIds:#{textureIds}, field:#{TEXTURE_FIELD_ID}"
 
-    -- fetch texture assets
-    processTexture = (textureId, next)->
-
-      gama.asset.getTextureById textureId, (err, texture2D)->
-        return next err if err
-        print "[animation::loadById] texture2D:#{texture2D}"
-        return next(nil, texture2D)
-
     -- 根据 textureIds 准备好 texture2D 实例
-    async.mapSeries textureIds, processTexture, (err, texture2Ds)->
+    async.mapSeries textureIds, gama.getTextureById, (err, texture2Ds)->
       return callback err if err
 
-      --print "[animation::loadById] after texture processed, texture2Ds:"
-      --dump texture2Ds
+      animation = AnimationCache\getAnimation id
 
-      assetFrames = gama.animation.makeSpriteFrames(id, texture2Ds, data.atlas, data.playback)
+      unless animation
+        assetFrames = gama.animation.makeSpriteFrames(id, texture2Ds, data.atlas, data.playback)
+        animation = cc.Animation\createWithSpriteFrames(assetFrames, SPF)
+        AnimationCache\addAnimation(animation, id)
 
-      animation = cc.Animation\createWithSpriteFrames(assetFrames, SPF)
+      gamaAnimation = GamaAnimation(texture2Ds[1], animation)
 
-      callback nil, {animation, data, texture2Ds}
+      callback nil, gamaAnimation
 
     return
 
