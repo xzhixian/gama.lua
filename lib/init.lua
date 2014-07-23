@@ -1,8 +1,7 @@
 local async = require("async")
-local _ = require("underscore")
 print("[gama] init")
-local spriteFrameCache = cc.SpriteFrameCache:getInstance()
-local TextureCache = cc.TextureCache:getInstance()
+local SpriteFrameCache = cc.SpriteFrameCache:getInstance()
+local TextureCache = cc.Director:getInstance():getTextureCache()
 local fs = cc.FileUtils:getInstance()
 fs:addSearchPath("gama/")
 local ASSET_ID_TO_TYPE_KV = { }
@@ -86,8 +85,8 @@ gama.animation = {
       if err then
         return callback(err)
       end
-      local frames = gama.animation.makeSpriteFrames(id, texture2Ds, data.atlas, data.playback)
-      local animation = display.newAnimation(frames, SPF)
+      local assetFrames = gama.animation.makeSpriteFrames(id, texture2Ds, data.atlas, data.playback)
+      local animation = cc.Animation:createWithSpriteFrames(assetFrames, SPF)
       return callback(nil, {
         animation,
         data,
@@ -97,23 +96,23 @@ gama.animation = {
   end,
   makeSpriteFrames = function(assetId, textures, arrangement, playscript)
     local count = 1
-    local assetFrames = _.map(arrangement, function(frameInfo)
+    local assetFrames = { }
+    local texture = textures[1]
+    for _index_0 = 1, #arrangement do
+      local frameInfo = arrangement[_index_0]
       local frameName = tostring(assetId) .. "/" .. tostring(count)
       count = count + 1
-      print("[animation::buildSpriteFrameCache] frameName:" .. tostring(frameName))
-      local frame = sharedSpriteFrameCache:spriteFrameByName(frameName)
+      local frame = SpriteFrameCache:getSpriteFrame(frameName)
       if frame then
-        print("[animation::buildSpriteFrameCache] find frame in cache")
-        return frame
+        print("[animation::buildSpriteFrameCache] find frame in cache, asset frame name: " .. tostring(frameName))
+        table.insert(assetFrames, frame)
       else
-        print("[animation::buildSpriteFrameCache] build up from json frameInfo:")
-        local texture = textures[frameInfo.texture + 1]
-        print("[animation::buildSpriteFrameCache] texture:" .. tostring(texture))
-        frame = CCSpriteFrame:createWithTexture(texture, CCRect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h))
-        sharedSpriteFrameCache:addSpriteFrame(frame, frameName)
-        return frame
+        print("[animation::buildSpriteFrameCache] build up from json, asset frame name: " .. tostring(frameName))
+        frame = cc.SpriteFrame:createWithTexture(texture, cc.rect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h))
+        SpriteFrameCache:addSpriteFrame(frame, frameName)
+        table.insert(assetFrames, frame)
       end
-    end)
+    end
     return assetFrames
   end
 }

@@ -1,11 +1,10 @@
 
 async = require "async"
-_ = require "underscore"
 
 print "[gama] init"
 
-spriteFrameCache = cc.SpriteFrameCache\getInstance!
-TextureCache = cc.TextureCache\getInstance!
+SpriteFrameCache = cc.SpriteFrameCache\getInstance!
+TextureCache = cc.Director\getInstance!\getTextureCache!
 
 fs = cc.FileUtils\getInstance!
 fs\addSearchPath "gama/"
@@ -84,16 +83,6 @@ gama.asset =
 
     return callback(nil, texture)
 
-    -- fetch the asset from remote server
-    --TextureCache\addImageAsync pathToFile, (funcname, texture)->
-      --print "[asset::getTextureById] texture init:#{texture}"
-
-      --return callback(nil, texture) if texture
-
-      --return callback "fail to load texture:#{id}#{extname}"
-
-    --return
-
 gama.animation =
 
   -- @param {function} callback, signature: callback(err, animation)
@@ -130,9 +119,9 @@ gama.animation =
       --print "[animation::loadById] after texture processed, texture2Ds:"
       --dump texture2Ds
 
-      frames = gama.animation.makeSpriteFrames(id, texture2Ds, data.atlas, data.playback)
+      assetFrames = gama.animation.makeSpriteFrames(id, texture2Ds, data.atlas, data.playback)
 
-      animation = display.newAnimation(frames, SPF)
+      animation = cc.Animation\createWithSpriteFrames(assetFrames, SPF)
 
       callback nil, {animation, data, texture2Ds}
 
@@ -144,49 +133,34 @@ gama.animation =
   makeSpriteFrames: (assetId, textures, arrangement, playscript)->
 
     count = 1
-    assetFrames = _.map arrangement, (frameInfo)->
+
+    assetFrames = {}
+
+    texture = textures[1]
+
+    for frameInfo in *arrangement
+
+    --assetFrames = _.map arrangement, (frameInfo)->
 
       frameName = "#{assetId}/#{count}"
       count += 1
 
-      print "[animation::buildSpriteFrameCache] frameName:#{frameName}"
-
-      frame = sharedSpriteFrameCache\spriteFrameByName(frameName)
+      frame = SpriteFrameCache\getSpriteFrame(frameName)
 
       if frame
-        print "[animation::buildSpriteFrameCache] find frame in cache"
-        return frame
+        print "[animation::buildSpriteFrameCache] find frame in cache, asset frame name: #{frameName}"
+        table.insert assetFrames, frame
 
       else
 
-        print "[animation::buildSpriteFrameCache] build up from json frameInfo:"
-        --dump frameInfo
+        print "[animation::buildSpriteFrameCache] build up from json, asset frame name: #{frameName}"
 
-        -- NOTE: frameInfo.texture is 0-based
-        texture = textures[frameInfo.texture + 1]
-
-        print "[animation::buildSpriteFrameCache] texture:#{texture}"
-        frame = CCSpriteFrame\createWithTexture(texture, CCRect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h))
+        frame = cc.SpriteFrame\createWithTexture(texture, cc.rect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h))
 
         -- push the frame into cache
-        sharedSpriteFrameCache\addSpriteFrame frame, frameName
+        SpriteFrameCache\addSpriteFrame frame, frameName
 
-        return frame
+        table.insert assetFrames, frame
 
     return assetFrames
-
-    -- when there is no playscript, return assetFrames directly
-    --return assetFrames unless type(playscript) == "table" and #playscript > 0
-
-    ---- build frames according to custom playscript
-    --playFrames = {}
-    --for i, assetFrameId in ipairs playscript
-      ----print "[animation::makeSpriteFrames] i:#{i}, assetFrameId:#{assetFrameId}"
-      --table.insert playFrames, assetFrames[assetFrameId]
-
-    --return playFrames
-
-
-
-
 
