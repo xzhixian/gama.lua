@@ -16,7 +16,7 @@ asset.getPathToFileById = function(id, extname)
   return tostring(ROOT_PATH) .. tostring(id) .. tostring(extname)
 end
 asset.fetchById = function(id, extname, callback)
-  printf("[asset::fetchById] id:" .. tostring(id))
+  console.log("[asset::fetchById] id:" .. tostring(id))
   if type(extname) == "function" and callback == nil then
     callback = extname
     extname = ""
@@ -44,7 +44,7 @@ asset.fetchByIds = function(ids, callback)
   return async.eachSeries(ids, asset.fetchById, callback)
 end
 asset.readById = function(id, callback)
-  printf("[asset::readById] id:" .. tostring(id))
+  console.log("[asset::readById] id:" .. tostring(id))
   callback = callback or DUMMY_CALLBACK
   assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
   id = string.trim(tostring(id or ""))
@@ -59,7 +59,7 @@ asset.readById = function(id, callback)
   end)
 end
 asset.getTextureById = function(id, extname, callback)
-  printf("[asset::getTextureById] id:" .. tostring(id))
+  console.log("[asset::getTextureById] id:" .. tostring(id))
   if type(extname) == "function" and callback == nil then
     callback = extname
     extname = ""
@@ -68,10 +68,10 @@ asset.getTextureById = function(id, extname, callback)
   assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
   extname = tostring(extname)
   local pathToFile = asset.getPathToFileById(id, extname)
-  printf("[asset::getTextureById] pathToFile:" .. tostring(pathToFile))
+  console.log("[asset::getTextureById] pathToFile:" .. tostring(pathToFile))
   local texture = sharedTextureCache:textureForKey(pathToFile)
   if texture then
-    printf("[asset::getTextureById] texture avilable for id:" .. tostring(id) .. tostring(extname))
+    console.log("[asset::getTextureById] texture avilable for id:" .. tostring(id) .. tostring(extname))
     return callback(nil, texture)
   end
   asset.fetchById(id, extname, function(err, pathToFile)
@@ -79,7 +79,7 @@ asset.getTextureById = function(id, extname, callback)
       return callback(err)
     end
     display.addImageAsync(pathToFile, function(funcname, texture)
-      printf("[asset::getTextureById] texture init:" .. tostring(texture))
+      console.log("[asset::getTextureById] texture init:" .. tostring(texture))
       if texture then
         return callback(nil, texture)
       end

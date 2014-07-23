@@ -25,7 +25,7 @@ asset.getPathToFileById = (id, extname = "")-> "#{ROOT_PATH}#{id}#{extname}"
 -- @param callback, signature: callback(err, pathToFile)
 asset.fetchById = (id, extname, callback)->
 
-  printf "[asset::fetchById] id:#{id}"
+  console.log "[asset::fetchById] id:#{id}"
 
   if type(extname) == "function" and callback == nil
     callback = extname
@@ -65,7 +65,7 @@ asset.fetchByIds = (ids, callback)-> async.eachSeries ids, asset.fetchById, call
 -- @param callback, signature: callback(err, content:String)
 asset.readById = (id, callback)->
 
-  printf "[asset::readById] id:#{id}"
+  console.log "[asset::readById] id:#{id}"
 
   -- make sure callback is firable
   callback = callback or DUMMY_CALLBACK
@@ -87,7 +87,7 @@ asset.readById = (id, callback)->
 -- @param callback , signature: callback(err, texture2D)
 asset.getTextureById = (id, extname, callback)->
 
-  printf "[asset::getTextureById] id:#{id}"
+  console.log "[asset::getTextureById] id:#{id}"
 
   if type(extname) == "function" and callback == nil
     callback = extname
@@ -101,13 +101,13 @@ asset.getTextureById = (id, extname, callback)->
 
   pathToFile = asset.getPathToFileById id, extname
 
-  printf "[asset::getTextureById] pathToFile:#{pathToFile}"
+  console.log "[asset::getTextureById] pathToFile:#{pathToFile}"
 
   texture = sharedTextureCache\textureForKey(pathToFile)
 
   -- require texture is avilable
   if texture
-    printf "[asset::getTextureById] texture avilable for id:#{id}#{extname}"
+    console.log "[asset::getTextureById] texture avilable for id:#{id}#{extname}"
     return  callback(nil, texture)
 
   -- fetch the asset from remote server
@@ -115,7 +115,7 @@ asset.getTextureById = (id, extname, callback)->
     return callback err if err
 
     display.addImageAsync pathToFile, (funcname, texture)->
-      printf "[asset::getTextureById] texture init:#{texture}"
+      console.log "[asset::getTextureById] texture init:#{texture}"
 
       return callback(nil, texture) if texture
 
