@@ -26,7 +26,7 @@ EMPTY_TABLE = {}
 
 TEXTURE_FIELD_ID = "png_8bit"
 
-SPF = 0.3 / 8
+SPF = 1 / 15
 
 
 class GamaAnimation
@@ -134,12 +134,15 @@ gama.animation =
     async.mapSeries textureIds, gama.getTextureById, (err, texture2Ds)->
       return callback err if err
 
-      animation = AnimationCache\getAnimation id
+      animation = AnimationCache\getAnimation id   -- 先到缓存里面找
 
       unless animation
         assetFrames = gama.animation.makeSpriteFrames(id, texture2Ds, data.atlas, data.playback)
-        animation = cc.Animation\createWithSpriteFrames(assetFrames, SPF)
-        AnimationCache\addAnimation(animation, id)
+        playframes = {}
+        for assetId in *data.playframes
+          table.insert(playframes, (assetFrames[assetId + 1] or assetFrames[1]))
+        animation = cc.Animation\createWithSpriteFrames(playframes, SPF)
+        AnimationCache\addAnimation(animation, id)  -- 加入到缓存，避免再次计算
 
       gamaAnimation = GamaAnimation(texture2Ds[1], animation)
 
@@ -150,7 +153,7 @@ gama.animation =
 
   -- 根据给定的 texture , arrangement 生产出 sprite frame
   -- @return frames[]
-  makeSpriteFrames: (assetId, textures, arrangement, playscript)->
+  makeSpriteFrames: (assetId, textures, arrangement)->
 
     count = 1
 
@@ -175,8 +178,11 @@ gama.animation =
 
         print "[animation::buildSpriteFrameCache] build up from json, asset frame name: #{frameName}"
 
-        frame = cc.SpriteFrame\createWithTexture(texture, cc.rect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h))
+        rect = cc.rect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h)
 
+        frame = cc.SpriteFrame\createWithTexture(texture, rect)
+        frame\setOriginalSizeInPixels(cc.size(512, 512))
+        frame\setOffset(cc.p(frameInfo.ox, frameInfo.oy))
         -- push the frame into cache
         SpriteFrameCache\addSpriteFrame frame, frameName
 

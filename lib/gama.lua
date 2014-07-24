@@ -11,7 +11,7 @@ local DUMMY_CALLBACK
 DUMMY_CALLBACK = function() end
 local EMPTY_TABLE = { }
 local TEXTURE_FIELD_ID = "png_8bit"
-local SPF = 0.3 / 8
+local SPF = 1 / 15
 local GamaAnimation
 do
   local _base_0 = {
@@ -114,14 +114,20 @@ gama.animation = {
       local animation = AnimationCache:getAnimation(id)
       if not (animation) then
         local assetFrames = gama.animation.makeSpriteFrames(id, texture2Ds, data.atlas, data.playback)
-        animation = cc.Animation:createWithSpriteFrames(assetFrames, SPF)
+        local playframes = { }
+        local _list_0 = data.playframes
+        for _index_0 = 1, #_list_0 do
+          local assetId = _list_0[_index_0]
+          table.insert(playframes, (assetFrames[assetId + 1] or assetFrames[1]))
+        end
+        animation = cc.Animation:createWithSpriteFrames(playframes, SPF)
         AnimationCache:addAnimation(animation, id)
       end
       local gamaAnimation = GamaAnimation(texture2Ds[1], animation)
       return callback(nil, gamaAnimation)
     end)
   end,
-  makeSpriteFrames = function(assetId, textures, arrangement, playscript)
+  makeSpriteFrames = function(assetId, textures, arrangement)
     local count = 1
     local assetFrames = { }
     local texture = textures[1]
@@ -135,7 +141,10 @@ gama.animation = {
         table.insert(assetFrames, frame)
       else
         print("[animation::buildSpriteFrameCache] build up from json, asset frame name: " .. tostring(frameName))
-        frame = cc.SpriteFrame:createWithTexture(texture, cc.rect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h))
+        local rect = cc.rect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h)
+        frame = cc.SpriteFrame:createWithTexture(texture, rect)
+        frame:setOriginalSizeInPixels(cc.size(512, 512))
+        frame:setOffset(cc.p(frameInfo.ox, frameInfo.oy))
         SpriteFrameCache:addSpriteFrame(frame, frameName)
         table.insert(assetFrames, frame)
       end
