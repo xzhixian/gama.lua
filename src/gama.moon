@@ -53,7 +53,9 @@ gama.VERSION = "0.1.0"
 gama.getAssetPath = (id)-> "assets/#{id}"
 
 gama.readJSON = (id)->
-  path = gama.getAssetPath id
+  path =  "assets/#{id}.csx"
+  print "[gama::readJSON] path:#{path}"
+
   unless fs\isFileExist path
     print "[gama::readJSON] file not found:#{path}"
     return nil
@@ -74,7 +76,12 @@ gama.getTypeById = (id)->
   obj = gama.readJSON id
   return nil unless obj
 
-  return obj["type"]
+  type = obj["type"]
+  ASSET_ID_TO_TYPE_KV[id] = type
+
+  print "[gama::getTypeById] type:#{type}"
+
+  return type
 
 
 --- getTextureById
@@ -112,6 +119,8 @@ gama.animation =
 
   -- @param {function} callback, signature: callback(err, gamaAnimation)
   getById:  (id, callback)->
+
+    print "[gama::animation::getById] id:#{id}"
 
     -- make sure callback is firable
     callback = callback or DUMMY_CALLBACK
