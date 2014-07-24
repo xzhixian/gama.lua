@@ -15,8 +15,14 @@ local SPF = 0.3 / 8
 local GamaAnimation
 do
   local _base_0 = {
-    playOnTarget = function(target)
-      local animate = cc.Animate:create(animation)
+    playOnSprite = function(self, target)
+      local animate = cc.Animate:create(self.ccAnimation)
+      local action = cc.RepeatForever:create(animate)
+      target:runAction(action)
+    end,
+    createSprite = function(self)
+      local sprite = cc.Sprite:createWithTexture(self.texture)
+      return sprite
     end
   }
   _base_0.__index = _base_0

@@ -34,10 +34,15 @@ class GamaAnimation
     @texture = texture
     @ccAnimation = ccAnimation
 
-  playOnTarget: (target)->
-    animate = cc.Animate\create(animation)
-    action = cc.RepeatForever:create(animate)
+  playOnSprite: (target)=>
+    animate = cc.Animate\create @ccAnimation
+    action = cc.RepeatForever\create(animate)
     target\runAction(action)
+    return
+
+  createSprite: =>
+    sprite = cc.Sprite\createWithTexture @texture
+    return sprite
 
 
 ------------ 补丁 : start --------------------
@@ -102,7 +107,7 @@ gama.getTextureById = (id, callback)->
 
 gama.animation =
 
-  -- @param {function} callback, signature: callback(err, animation)
+  -- @param {function} callback, signature: callback(err, gamaAnimation)
   getById:  (id, callback)->
 
     -- make sure callback is firable
