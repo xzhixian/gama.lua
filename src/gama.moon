@@ -28,21 +28,22 @@ TEXTURE_FIELD_ID = "png_8bit"
 
 SPF = 1 / 15
 
-
+-- 数据模型类: Gama 动画单元
 class GamaAnimation
+  -- 构造函数
+  -- @param texture cc.Texture2D
+  -- @param ccAnimation cc.Animation
   new: (texture, ccAnimation)=>
     @texture = texture
     @ccAnimation = ccAnimation
 
-  playOnSprite: (target)=>
+  -- play this animation on the given sprite
+  -- @param sprite  cc.Sprite
+  playOnSprite: (sprite)=>
     animate = cc.Animate\create @ccAnimation
     action = cc.RepeatForever\create(animate)
-    target\runAction(action)
+    sprite\runAction(action)
     return
-
-  createSprite: =>
-    sprite = cc.Sprite\createWithTexture @texture
-    return sprite
 
 
 ------------ 补丁 : start --------------------
@@ -53,7 +54,9 @@ gama.getAssetPath = (id)-> "assets/#{id}"
 
 gama.readJSON = (id)->
   path = gama.getAssetPath id
-  return nil unless fs\isFileExist path
+  unless fs\isFileExist path
+    print "[gama::readJSON] file not found:#{path}"
+    return nil
 
   content = fs\getStringFromFile path
 

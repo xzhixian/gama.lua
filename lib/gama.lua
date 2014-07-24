@@ -15,14 +15,10 @@ local SPF = 1 / 15
 local GamaAnimation
 do
   local _base_0 = {
-    playOnSprite = function(self, target)
+    playOnSprite = function(self, sprite)
       local animate = cc.Animate:create(self.ccAnimation)
       local action = cc.RepeatForever:create(animate)
-      target:runAction(action)
-    end,
-    createSprite = function(self)
-      local sprite = cc.Sprite:createWithTexture(self.texture)
-      return sprite
+      sprite:runAction(action)
     end
   }
   _base_0.__index = _base_0
@@ -52,6 +48,7 @@ end
 gama.readJSON = function(id)
   local path = gama.getAssetPath(id)
   if not (fs:isFileExist(path)) then
+    print("[gama::readJSON] file not found:" .. tostring(path))
     return nil
   end
   local content = fs:getStringFromFile(path)
