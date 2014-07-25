@@ -6,7 +6,6 @@ local AnimationCache = cc.AnimationCache:getInstance()
 local fs = cc.FileUtils:getInstance()
 fs:addSearchPath("gama/")
 local ASSET_ID_TO_TYPE_KV = { }
-local ASSET_ID_TO_ANIMATION_KV = { }
 local DUMMY_CALLBACK
 DUMMY_CALLBACK = function() end
 local EMPTY_TABLE = { }
@@ -87,29 +86,28 @@ gama.getTextureById = function(id, callback)
   print("[gama::getTextureById] texture:" .. tostring(texture))
   return callback(nil, texture)
 end
+gama.getTexturesFromJSON = function(data, callback)
+  local textureIds = (data.texture or EMPTY_TABLE)[TEXTURE_FIELD_ID]
+  if type(textureIds) == "string" then
+    textureIds = {
+      textureIds
+    }
+  end
+  if not (type(textureIds) == "table" and #textureIds > 0) then
+    return callback("invalid textureIds:" .. tostring(textureIds) .. ", field:" .. tostring(TEXTURE_FIELD_ID))
+  end
+  async.mapSeries(textureIds, gama.getTextureById, callback)
+end
 gama.animation = {
   getById = function(id, callback)
     print("[gama::animation::getById] id:" .. tostring(id))
     callback = callback or DUMMY_CALLBACK
     assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
-    if ASSET_ID_TO_ANIMATION_KV[id] then
-      print("[gama::animation::getById] found in lua cache:" .. tostring(id))
-      return callback(nil, ASSET_ID_TO_ANIMATION_KV[id])
-    end
     local data = gama.readJSON(id)
     if not (data) then
       return callback("fail to parse json data from id:" .. tostring(id))
     end
-    local textureIds = (data.texture or EMPTY_TABLE)[TEXTURE_FIELD_ID]
-    if type(textureIds) == "string" then
-      textureIds = {
-        textureIds
-      }
-    end
-    if not (type(textureIds) == "table" and #textureIds > 0) then
-      return callback("invalid textureIds:" .. tostring(textureIds) .. ", field:" .. tostring(TEXTURE_FIELD_ID))
-    end
-    async.mapSeries(textureIds, gama.getTextureById, function(err, texture2Ds)
+    gama.getTexturesFromJSON(data, function(err, texture2Ds)
       if err then
         return callback(err)
       end
@@ -152,5 +150,17 @@ gama.animation = {
       end
     end
     return assetFrames
+  end
+}
+gama.tilemap = {
+  getById = function(id, callback)
+    print("[gama::tilemap::getById] id:" .. tostring(id))
+    callback = callback or DUMMY_CALLBACK
+    assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
+    local data = gama.readJSON(id)
+    if not (data) then
+      return callback("fail to parse json data from id:" .. tostring(id))
+    end
+    gama.getTexturesFromJSON(data, function(err, texture2Ds) end)
   end
 }

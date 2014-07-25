@@ -18,7 +18,7 @@ ASSET_ID_TO_TYPE_KV = {}
 -- value:
 --    texture :
 --    action :
-ASSET_ID_TO_ANIMATION_KV = {}
+--ASSET_ID_TO_ANIMATION_KV = {}
 
 DUMMY_CALLBACK = ->
 
@@ -115,6 +115,22 @@ gama.getTextureById = (id, callback)->
 
   return callback(nil, texture)
 
+-- 分析 csx json，从里面拉出来 texture id，然后在内存中载入所有所需要的 Texture2D
+gama.getTexturesFromJSON = (data, callback)->
+
+  -- work out required texture ids
+  textureIds = (data.texture or EMPTY_TABLE)[TEXTURE_FIELD_ID]
+
+  textureIds = {textureIds} if type(textureIds) == "string"
+
+  return callback "invalid textureIds:#{textureIds}, field:#{TEXTURE_FIELD_ID}" unless type(textureIds) == "table" and #textureIds > 0
+
+  -- 根据 textureIds 准备好 texture2D 实例
+  async.mapSeries textureIds, gama.getTextureById, callback
+
+  return
+
+-- Animation module
 gama.animation =
 
   -- @param {function} callback, signature: callback(err, gamaAnimation)
@@ -126,26 +142,14 @@ gama.animation =
     callback = callback or DUMMY_CALLBACK
     assert(type(callback) == "function", "invalid callback: #{callback}")
 
-    if ASSET_ID_TO_ANIMATION_KV[id]
-      print "[gama::animation::getById] found in lua cache:#{id}"
-      return callback nil, ASSET_ID_TO_ANIMATION_KV[id]
-
     data = gama.readJSON id
 
     return callback "fail to parse json data from id:#{id}" unless data
 
-    -- work out required texture ids
-    textureIds = (data.texture or EMPTY_TABLE)[TEXTURE_FIELD_ID]
+    -- 根据 json 准备好 texture2D 实例
+    gama.getTexturesFromJSON data, (err, texture2Ds)->
 
-    textureIds = {textureIds} if type(textureIds) == "string"
-
-    unless type(textureIds) == "table" and #textureIds > 0
-      return callback "invalid textureIds:#{textureIds}, field:#{TEXTURE_FIELD_ID}"
-
-    -- 根据 textureIds 准备好 texture2D 实例
-    async.mapSeries textureIds, gama.getTextureById, (err, texture2Ds)->
       return callback err if err
-
       animation = AnimationCache\getAnimation id   -- 先到缓存里面找
 
       unless animation
@@ -175,8 +179,6 @@ gama.animation =
 
     for frameInfo in *arrangement
 
-    --assetFrames = _.map arrangement, (frameInfo)->
-
       frameName = "#{assetId}/#{count}"
       count += 1
 
@@ -201,4 +203,29 @@ gama.animation =
         table.insert assetFrames, frame
 
     return assetFrames
+
+
+
+gama.tilemap =
+
+  -- @param {function} callback, signature: callback(err, gamaTilemap)
+  getById:  (id, callback)->
+
+    print "[gama::tilemap::getById] id:#{id}"
+
+    -- make sure callback is firable
+    callback = callback or DUMMY_CALLBACK
+    assert(type(callback) == "function", "invalid callback: #{callback}")
+
+    data = gama.readJSON id
+    return callback "fail to parse json data from id:#{id}" unless data
+
+    -- 根据 json 准备好 texture2D 实例
+    gama.getTexturesFromJSON data, (err, texture2Ds)->
+
+
+    return
+
+
+
 
