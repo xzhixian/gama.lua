@@ -85,14 +85,19 @@ gama =
 
     return type
 
+
+
+-- 管理和处理 texture2D
+gama.texture2D =
+
   --- getTextureById
   -- 获取纹理
   -- @param id asset id
   -- @param extname
   -- @param callback , signature: callback(err, texture2D)
-  getTextureById:  (id, callback)->
+  getById:  (id, callback)->
 
-    print "[gama::getTextureById] id:#{id}"
+    print "[gama::Texture2D::getById] id:#{id}"
 
     -- make sure callback is firable
     callback = callback or DUMMY_CALLBACK
@@ -100,13 +105,11 @@ gama =
 
     pathToFile = gama.getAssetPath id
 
-    --print "[gama::getTextureById] pathToFile:#{pathToFile}"
-
     texture = TextureCache\getTextureForKey(pathToFile)
 
     -- require texture is avilable
     if texture
-      print "[gama::getTextureById] texture avilable for id:#{id}#{extname}"
+      print "[gama::Texture2D::getById] texture avilable for id:#{id}#{extname}"
       return  callback(nil, texture)
 
     return callback "missing file at:#{pathToFile}" unless fs\isFileExist pathToFile
@@ -116,7 +119,7 @@ gama =
     return callback(nil, texture)
 
   -- 分析 csx json，从里面拉出来 texture id，然后在内存中载入所有所需要的 Texture2D
-  getTexturesFromJSON: (data, callback)->
+  getFromJSON: (data, callback)->
 
     -- work out required texture ids
     textureIds = (data.texture or EMPTY_TABLE)[TEXTURE_FIELD_ID]
@@ -126,7 +129,7 @@ gama =
     return callback "invalid textureIds:#{textureIds}, field:#{TEXTURE_FIELD_ID}" unless type(textureIds) == "table" and #textureIds > 0
 
     -- 根据 textureIds 准备好 texture2D 实例
-    async.mapSeries textureIds, gama.getTextureById, callback
+    async.mapSeries textureIds, gama.texture2D.getById, callback
 
     return
 
@@ -147,13 +150,13 @@ gama.animation =
     return callback "fail to parse json data from id:#{id}" unless data
 
     -- 根据 json 准备好 texture2D 实例
-    gama.getTexturesFromJSON data, (err, texture2Ds)->
+    gama.texture2D.getFromJSON data, (err, texture2Ds)->
 
       return callback err if err
       animation = AnimationCache\getAnimation id   -- 先到缓存里面找
 
       unless animation
-        assetFrames = gama.animation.makeSpriteFrames(id, texture2Ds, data.atlas, data.playback)
+        assetFrames = gama.animation.makeSpriteFrames(id, texture2Ds[1], data.atlas)
         playframes = {}
         for assetId in *data.playframes
           table.insert(playframes, (assetFrames[assetId + 1] or assetFrames[1]))
@@ -169,13 +172,11 @@ gama.animation =
 
   -- 根据给定的 texture , arrangement 生产出 sprite frame
   -- @return frames[]
-  makeSpriteFrames: (assetId, textures, arrangement)->
+  makeSpriteFrames: (assetId, texture, arrangement)->
 
     count = 1
 
     assetFrames = {}
-
-    texture = textures[1]
 
     for frameInfo in *arrangement
 
@@ -219,7 +220,7 @@ gama.tilemap =
     return callback "fail to parse json data from id:#{id}" unless data
 
     -- 根据 json 准备好 texture2D 实例
-    gama.getTexturesFromJSON data, (err, texture2Ds)->
+    gama.texture2D.getFromJSON data, (err, texture2Ds)->
 
     return
 

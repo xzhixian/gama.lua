@@ -67,15 +67,17 @@ gama = {
     ASSET_ID_TO_TYPE_KV[id] = type
     print("[gama::getTypeById] type:" .. tostring(type))
     return type
-  end,
-  getTextureById = function(id, callback)
-    print("[gama::getTextureById] id:" .. tostring(id))
+  end
+}
+gama.texture2D = {
+  getById = function(id, callback)
+    print("[gama::Texture2D::getById] id:" .. tostring(id))
     callback = callback or DUMMY_CALLBACK
     assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
     local pathToFile = gama.getAssetPath(id)
     local texture = TextureCache:getTextureForKey(pathToFile)
     if texture then
-      print("[gama::getTextureById] texture avilable for id:" .. tostring(id) .. tostring(extname))
+      print("[gama::Texture2D::getById] texture avilable for id:" .. tostring(id) .. tostring(extname))
       return callback(nil, texture)
     end
     if not (fs:isFileExist(pathToFile)) then
@@ -84,7 +86,7 @@ gama = {
     texture = TextureCache:addImage(pathToFile)
     return callback(nil, texture)
   end,
-  getTexturesFromJSON = function(data, callback)
+  getFromJSON = function(data, callback)
     local textureIds = (data.texture or EMPTY_TABLE)[TEXTURE_FIELD_ID]
     if type(textureIds) == "string" then
       textureIds = {
@@ -94,7 +96,7 @@ gama = {
     if not (type(textureIds) == "table" and #textureIds > 0) then
       return callback("invalid textureIds:" .. tostring(textureIds) .. ", field:" .. tostring(TEXTURE_FIELD_ID))
     end
-    async.mapSeries(textureIds, gama.getTextureById, callback)
+    async.mapSeries(textureIds, gama.texture2D.getById, callback)
   end
 }
 gama.animation = {
@@ -106,13 +108,13 @@ gama.animation = {
     if not (data) then
       return callback("fail to parse json data from id:" .. tostring(id))
     end
-    gama.getTexturesFromJSON(data, function(err, texture2Ds)
+    gama.texture2D.getFromJSON(data, function(err, texture2Ds)
       if err then
         return callback(err)
       end
       local animation = AnimationCache:getAnimation(id)
       if not (animation) then
-        local assetFrames = gama.animation.makeSpriteFrames(id, texture2Ds, data.atlas, data.playback)
+        local assetFrames = gama.animation.makeSpriteFrames(id, texture2Ds[1], data.atlas)
         local playframes = { }
         local _list_0 = data.playframes
         for _index_0 = 1, #_list_0 do
@@ -126,10 +128,9 @@ gama.animation = {
       return callback(nil, gamaAnimation)
     end)
   end,
-  makeSpriteFrames = function(assetId, textures, arrangement)
+  makeSpriteFrames = function(assetId, texture, arrangement)
     local count = 1
     local assetFrames = { }
-    local texture = textures[1]
     for _index_0 = 1, #arrangement do
       local frameInfo = arrangement[_index_0]
       local frameName = tostring(assetId) .. "/" .. tostring(count)
@@ -158,6 +159,6 @@ gama.tilemap = {
     if not (data) then
       return callback("fail to parse json data from id:" .. tostring(id))
     end
-    gama.getTexturesFromJSON(data, function(err, texture2Ds) end)
+    gama.texture2D.getFromJSON(data, function(err, texture2Ds) end)
   end
 }
