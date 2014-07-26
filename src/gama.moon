@@ -42,6 +42,8 @@ class GamaAnimation
   -- play this animation on the given sprite
   -- @param sprite  cc.Sprite
   playOnSprite: (sprite)=>
+    assert sprite, "invalid sprite"
+    sprite\cleanup!
     animate = cc.Animate\create @ccAnimation
     action = cc.RepeatForever\create(animate)
     sprite\runAction(action)
@@ -61,15 +63,21 @@ class GamaFigure
     @data = data
     @defaultMotion = defaultMotion
     @defaultDirection = defaultDirection
+    @motions = {}
+    for motionName in pairs data
+      table.insert @motions, motionName
 
   setDefaultMotion: (value)=> @defaultMotion = value
 
   setDefaultDirection: (value)=> @defaultDirection = value
 
+  getMotions: => @motions
+
   -- play this animation on the given sprite
   -- @param sprite  cc.Sprite
   playOnSprite: (sprite, motionName, direction)=>
-    animationName = "#{@id}/#{motionName}/#{direction}"
+    assert sprite, "invalid sprite"
+    animationName = "#{@id}/#{motionName}/#{direction or @defaultDirection}"
     animation = AnimationCache\getAnimation animationName   -- 先到缓存里面找
     unless animation
       print "[GamaFigure(#{playOnSprite})::playOnSprite] missing animation for motionName:#{motionName}, direction:#{direction}, use defaults"
@@ -78,12 +86,8 @@ class GamaFigure
         print "[GamaFigure(#{playOnSprite})::playOnSprite] no default animation"
         return
 
-    print "[gama::!!!!] animation:#{animation}"
-    print "[gama::!!!!@@@] animation.getFrames():"
-    console.dir animation\getFrames()
-
+    sprite\cleanup!
     animate = cc.Animate\create animation
-    print "[gama::@@@@] animate:#{animate}"
     action = cc.RepeatForever\create(animate)
     sprite\runAction(action)
     return
@@ -274,12 +278,9 @@ gama.figure =
         arrangement = data.atlas[i].arrangment
         gama.texture2D.makeSpriteFrames(id, texture, arrangement, assetFrames)
 
-      for motionName, directionSet in pairs data.playframes
-        print "[gama::method] motionName:#{motionName}"
-
-        for direction, assetFrameIds in pairs directionSet
+      for motionName, directionSet in pairs data.playframes       -- 遍历动作
+        for direction, assetFrameIds in pairs directionSet        -- 遍历每个动作的方向
           animationName = "#{id}/#{motionName}/#{direction}"
-          print "[gama::method] direction:#{direction}"
 
           animation = AnimationCache\getAnimation animationName   -- 先到缓存里面找
 
@@ -292,16 +293,11 @@ gama.figure =
             playframes = {}
             for assetId in *assetFrameIds
               assetFrame = assetFrames["#{id}/#{assetId}"]
-              print "[gama::assetFrame] #{assetFrame}, id: #{id}/#{assetId} "
-
               table.insert(playframes, assetFrame) if assetFrame
 
             animation = cc.Animation\createWithSpriteFrames(playframes, SPF)
             AnimationCache\addAnimation(animation, animationName)  -- 加入到缓存，避免再次计算
             directionSet[direction] = animation
-
-      console.info "[gama] got assetFrames"
-      console.dir  data.playframes
 
       instance = GamaFigure(id, data.playframes)
       callback nil, instance

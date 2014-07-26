@@ -15,6 +15,8 @@ local GamaAnimation
 do
   local _base_0 = {
     playOnSprite = function(self, sprite)
+      assert(sprite, "invalid sprite")
+      sprite:cleanup()
       local animate = cc.Animate:create(self.ccAnimation)
       local action = cc.RepeatForever:create(animate)
       sprite:runAction(action)
@@ -50,8 +52,12 @@ do
     setDefaultDirection = function(self, value)
       self.defaultDirection = value
     end,
+    getMotions = function(self)
+      return self.motions
+    end,
     playOnSprite = function(self, sprite, motionName, direction)
-      local animationName = tostring(self.id) .. "/" .. tostring(motionName) .. "/" .. tostring(direction)
+      assert(sprite, "invalid sprite")
+      local animationName = tostring(self.id) .. "/" .. tostring(motionName) .. "/" .. tostring(direction or self.defaultDirection)
       local animation = AnimationCache:getAnimation(animationName)
       if not (animation) then
         print("[GamaFigure(" .. tostring(playOnSprite) .. ")::playOnSprite] missing animation for motionName:" .. tostring(motionName) .. ", direction:" .. tostring(direction) .. ", use defaults")
@@ -61,11 +67,8 @@ do
           return 
         end
       end
-      print("[gama::!!!!] animation:" .. tostring(animation))
-      print("[gama::!!!!@@@] animation.getFrames():")
-      console.dir(animation:getFrames())
+      sprite:cleanup()
       local animate = cc.Animate:create(animation)
-      print("[gama::@@@@] animate:" .. tostring(animate))
       local action = cc.RepeatForever:create(animate)
       sprite:runAction(action)
     end
@@ -79,6 +82,10 @@ do
       self.data = data
       self.defaultMotion = defaultMotion
       self.defaultDirection = defaultDirection
+      self.motions = { }
+      for motionName in pairs(data) do
+        table.insert(self.motions, motionName)
+      end
     end,
     __base = _base_0,
     __name = "GamaFigure"
@@ -221,10 +228,8 @@ gama.figure = {
         gama.texture2D.makeSpriteFrames(id, texture, arrangement, assetFrames)
       end
       for motionName, directionSet in pairs(data.playframes) do
-        print("[gama::method] motionName:" .. tostring(motionName))
         for direction, assetFrameIds in pairs(directionSet) do
           local animationName = tostring(id) .. "/" .. tostring(motionName) .. "/" .. tostring(direction)
-          print("[gama::method] direction:" .. tostring(direction))
           local animation = AnimationCache:getAnimation(animationName)
           if animation then
             directionSet[direction] = animation
@@ -233,7 +238,6 @@ gama.figure = {
             for _index_0 = 1, #assetFrameIds do
               local assetId = assetFrameIds[_index_0]
               local assetFrame = assetFrames[tostring(id) .. "/" .. tostring(assetId)]
-              print("[gama::assetFrame] " .. tostring(assetFrame) .. ", id: " .. tostring(id) .. "/" .. tostring(assetId) .. " ")
               if assetFrame then
                 table.insert(playframes, assetFrame)
               end
@@ -244,8 +248,6 @@ gama.figure = {
           end
         end
       end
-      console.info("[gama] got assetFrames")
-      console.dir(data.playframes)
       local instance = GamaFigure(id, data.playframes)
       return callback(nil, instance)
     end)
