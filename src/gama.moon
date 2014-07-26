@@ -133,6 +133,45 @@ gama.texture2D =
 
     return
 
+
+  -- 根据给定的 texture , arrangement 生产出 sprite frame
+  -- @param {String} assetId, gama asset id
+  -- @param {Texture2D} texture
+  -- @param {Table} arrangement, bin arrangement
+  -- @param {Table} assetFrames, optional, is supplied, then will be used as output
+  -- @return frames[]
+  makeSpriteFrames: (assetId, texture, arrangement, assetFrames)->
+
+    assetFrames = assetFrames or {}
+
+    for frameId, frameInfo in pairs arrangement
+
+      frameName = "#{assetId}/#{frameId}"
+
+      frame = SpriteFrameCache\getSpriteFrame(frameName)
+
+      if frame
+        --print "[animation::buildSpriteFrameCache] find frame in cache, asset frame name: #{frameName}"
+        assetFrames[frameName] = frame
+
+      else
+        --print "[animation::buildSpriteFrameCache] build up from json, asset frame name: #{frameName}"
+        rect = cc.rect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h)
+
+        frame = cc.SpriteFrame\createWithTexture(texture, rect)
+        frame\setOriginalSizeInPixels(cc.size(512, 512))
+        frame\setOffset(cc.p(frameInfo.ox, frameInfo.oy))
+        -- push the frame into cache
+        SpriteFrameCache\addSpriteFrame frame, frameName
+
+        assetFrames[frameName] = frame
+
+    return assetFrames
+
+
+
+
+
 -- Animation module
 gama.animation =
 
@@ -151,15 +190,16 @@ gama.animation =
 
     -- 根据 json 准备好 texture2D 实例
     gama.texture2D.getFromJSON data, (err, texture2Ds)->
-
       return callback err if err
+
       animation = AnimationCache\getAnimation id   -- 先到缓存里面找
 
       unless animation
-        assetFrames = gama.animation.makeSpriteFrames(id, texture2Ds[1], data.atlas)
+        assetFrames = gama.texture2D.makeSpriteFrames(id, texture2Ds[1], data.atlas)
         playframes = {}
+        defaultFrame = assetFrames["#{id}/1"]
         for assetId in *data.playframes
-          table.insert(playframes, (assetFrames[assetId + 1] or assetFrames[1]))
+          table.insert(playframes, (assetFrames["#{id}/#{assetId + 1}"] or defaultFrame))
         animation = cc.Animation\createWithSpriteFrames(playframes, SPF)
         AnimationCache\addAnimation(animation, id)  -- 加入到缓存，避免再次计算
 
@@ -170,42 +210,7 @@ gama.animation =
     return
 
 
-  -- 根据给定的 texture , arrangement 生产出 sprite frame
-  -- @return frames[]
-  makeSpriteFrames: (assetId, texture, arrangement)->
-
-    count = 1
-
-    assetFrames = {}
-
-    for frameInfo in *arrangement
-
-      frameName = "#{assetId}/#{count}"
-      count += 1
-
-      frame = SpriteFrameCache\getSpriteFrame(frameName)
-
-      if frame
-        --print "[animation::buildSpriteFrameCache] find frame in cache, asset frame name: #{frameName}"
-        table.insert assetFrames, frame
-
-      else
-        --print "[animation::buildSpriteFrameCache] build up from json, asset frame name: #{frameName}"
-        rect = cc.rect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h)
-
-        frame = cc.SpriteFrame\createWithTexture(texture, rect)
-        frame\setOriginalSizeInPixels(cc.size(512, 512))
-        frame\setOffset(cc.p(frameInfo.ox, frameInfo.oy))
-        -- push the frame into cache
-        SpriteFrameCache\addSpriteFrame frame, frameName
-
-        table.insert assetFrames, frame
-
-    return assetFrames
-
-
-
-gama.tilemap =
+gama.figure =
 
   -- @param {function} callback, signature: callback(err, gamaTilemap)
   getById:  (id, callback)->
@@ -221,6 +226,43 @@ gama.tilemap =
 
     -- 根据 json 准备好 texture2D 实例
     gama.texture2D.getFromJSON data, (err, texture2Ds)->
+
+      return callback err if err
+
+      -- 准备好素材帧
+      assetFrames = {}
+      for i, texture in ipairs texture2Ds
+        arrangement = data.atlas[i].arrangment
+        gama.texture2D.makeSpriteFrames(id, texture, arrangement, assetFrames)
+
+      for motionName, directionSet in pairs data.playframes
+        for direction, assetFrameIds in pairs directionSet
+          animationName = "#{id}/#{motionName}/#{direction}"
+
+          animation = AnimationCache\getAnimation animationName   -- 先到缓存里面找
+
+          if animation
+            -- found in cache
+            directionSet[direction] = animation
+
+          else
+
+            playframes = {}
+            for assetId in *playframes
+              assetFrame = assetFrames["#{id}/#{assetId}"]
+              table.insert(playframes, assetFrame) if assetFrame
+
+            animation = cc.Animation\createWithSpriteFrames(playframes, SPF)
+            AnimationCache\addAnimation(animation, animationName)  -- 加入到缓存，避免再次计算
+            directionSet[direction] = animation
+
+      console.info "[gama] got assetFrames"
+      console.dir  data.playframes
+
+
+
+
+
 
     return
 

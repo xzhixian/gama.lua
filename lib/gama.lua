@@ -97,6 +97,24 @@ gama.texture2D = {
       return callback("invalid textureIds:" .. tostring(textureIds) .. ", field:" .. tostring(TEXTURE_FIELD_ID))
     end
     async.mapSeries(textureIds, gama.texture2D.getById, callback)
+  end,
+  makeSpriteFrames = function(assetId, texture, arrangement, assetFrames)
+    assetFrames = assetFrames or { }
+    for frameId, frameInfo in pairs(arrangement) do
+      local frameName = tostring(assetId) .. "/" .. tostring(frameId)
+      local frame = SpriteFrameCache:getSpriteFrame(frameName)
+      if frame then
+        assetFrames[frameName] = frame
+      else
+        local rect = cc.rect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h)
+        frame = cc.SpriteFrame:createWithTexture(texture, rect)
+        frame:setOriginalSizeInPixels(cc.size(512, 512))
+        frame:setOffset(cc.p(frameInfo.ox, frameInfo.oy))
+        SpriteFrameCache:addSpriteFrame(frame, frameName)
+        assetFrames[frameName] = frame
+      end
+    end
+    return assetFrames
   end
 }
 gama.animation = {
@@ -114,12 +132,13 @@ gama.animation = {
       end
       local animation = AnimationCache:getAnimation(id)
       if not (animation) then
-        local assetFrames = gama.animation.makeSpriteFrames(id, texture2Ds[1], data.atlas)
+        local assetFrames = gama.texture2D.makeSpriteFrames(id, texture2Ds[1], data.atlas)
         local playframes = { }
+        local defaultFrame = assetFrames[tostring(id) .. "/1"]
         local _list_0 = data.playframes
         for _index_0 = 1, #_list_0 do
           local assetId = _list_0[_index_0]
-          table.insert(playframes, (assetFrames[assetId + 1] or assetFrames[1]))
+          table.insert(playframes, (assetFrames[tostring(id) .. "/" .. tostring(assetId + 1)] or defaultFrame))
         end
         animation = cc.Animation:createWithSpriteFrames(playframes, SPF)
         AnimationCache:addAnimation(animation, id)
@@ -127,30 +146,9 @@ gama.animation = {
       local gamaAnimation = GamaAnimation(texture2Ds[1], animation)
       return callback(nil, gamaAnimation)
     end)
-  end,
-  makeSpriteFrames = function(assetId, texture, arrangement)
-    local count = 1
-    local assetFrames = { }
-    for _index_0 = 1, #arrangement do
-      local frameInfo = arrangement[_index_0]
-      local frameName = tostring(assetId) .. "/" .. tostring(count)
-      count = count + 1
-      local frame = SpriteFrameCache:getSpriteFrame(frameName)
-      if frame then
-        table.insert(assetFrames, frame)
-      else
-        local rect = cc.rect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h)
-        frame = cc.SpriteFrame:createWithTexture(texture, rect)
-        frame:setOriginalSizeInPixels(cc.size(512, 512))
-        frame:setOffset(cc.p(frameInfo.ox, frameInfo.oy))
-        SpriteFrameCache:addSpriteFrame(frame, frameName)
-        table.insert(assetFrames, frame)
-      end
-    end
-    return assetFrames
   end
 }
-gama.tilemap = {
+gama.figure = {
   getById = function(id, callback)
     print("[gama::tilemap::getById] id:" .. tostring(id))
     callback = callback or DUMMY_CALLBACK
@@ -159,6 +157,38 @@ gama.tilemap = {
     if not (data) then
       return callback("fail to parse json data from id:" .. tostring(id))
     end
-    gama.texture2D.getFromJSON(data, function(err, texture2Ds) end)
+    gama.texture2D.getFromJSON(data, function(err, texture2Ds)
+      if err then
+        return callback(err)
+      end
+      local assetFrames = { }
+      for i, texture in ipairs(texture2Ds) do
+        local arrangement = data.atlas[i].arrangment
+        gama.texture2D.makeSpriteFrames(id, texture, arrangement, assetFrames)
+      end
+      for motionName, directionSet in pairs(data.playframes) do
+        for direction, assetFrameIds in pairs(directionSet) do
+          local animationName = tostring(id) .. "/" .. tostring(motionName) .. "/" .. tostring(direction)
+          local animation = AnimationCache:getAnimation(animationName)
+          if animation then
+            directionSet[direction] = animation
+          else
+            local playframes = { }
+            for _index_0 = 1, #playframes do
+              local assetId = playframes[_index_0]
+              local assetFrame = assetFrames[tostring(id) .. "/" .. tostring(assetId)]
+              if assetFrame then
+                table.insert(playframes, assetFrame)
+              end
+            end
+            animation = cc.Animation:createWithSpriteFrames(playframes, SPF)
+            AnimationCache:addAnimation(animation, animationName)
+            directionSet[direction] = animation
+          end
+        end
+      end
+      console.info("[gama] got assetFrames")
+      return console.dir(data.playframes)
+    end)
   end
 }
