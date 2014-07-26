@@ -39,65 +39,64 @@ do
   _base_0.__class = _class_0
   GamaAnimation = _class_0
 end
-gama = gama or { }
-gama.VERSION = "0.1.0"
-gama.getAssetPath = function(id)
-  return "assets/" .. tostring(id)
-end
-gama.readJSON = function(id)
-  local path = "assets/" .. tostring(id) .. ".csx"
-  print("[gama::readJSON] path:" .. tostring(path))
-  if not (fs:isFileExist(path)) then
-    print("[gama::readJSON] file not found:" .. tostring(path))
-    return nil
-  end
-  local content = fs:getStringFromFile(path)
-  return json.decode(content)
-end
-gama.getTypeById = function(id)
-  local type = ASSET_ID_TO_TYPE_KV[id]
-  if type then
+gama = {
+  VERSION = "0.1.0",
+  getAssetPath = function(id)
+    return "assets/" .. tostring(id)
+  end,
+  readJSON = function(id)
+    local path = "assets/" .. tostring(id) .. ".csx"
+    print("[gama::readJSON] path:" .. tostring(path))
+    if not (fs:isFileExist(path)) then
+      print("[gama::readJSON] file not found:" .. tostring(path))
+      return nil
+    end
+    local content = fs:getStringFromFile(path)
+    return json.decode(content)
+  end,
+  getTypeById = function(id)
+    local type = ASSET_ID_TO_TYPE_KV[id]
+    if type then
+      return type
+    end
+    local obj = gama.readJSON(id)
+    if not (obj) then
+      return nil
+    end
+    type = obj["type"]
+    ASSET_ID_TO_TYPE_KV[id] = type
+    print("[gama::getTypeById] type:" .. tostring(type))
     return type
-  end
-  local obj = gama.readJSON(id)
-  if not (obj) then
-    return nil
-  end
-  type = obj["type"]
-  ASSET_ID_TO_TYPE_KV[id] = type
-  print("[gama::getTypeById] type:" .. tostring(type))
-  return type
-end
-gama.getTextureById = function(id, callback)
-  print("[gama::getTextureById] id:" .. tostring(id))
-  callback = callback or DUMMY_CALLBACK
-  assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
-  local pathToFile = gama.getAssetPath(id)
-  print("[gama::getTextureById] pathToFile:" .. tostring(pathToFile))
-  local texture = TextureCache:getTextureForKey(pathToFile)
-  if texture then
-    print("[gama::getTextureById] texture avilable for id:" .. tostring(id) .. tostring(extname))
+  end,
+  getTextureById = function(id, callback)
+    print("[gama::getTextureById] id:" .. tostring(id))
+    callback = callback or DUMMY_CALLBACK
+    assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
+    local pathToFile = gama.getAssetPath(id)
+    local texture = TextureCache:getTextureForKey(pathToFile)
+    if texture then
+      print("[gama::getTextureById] texture avilable for id:" .. tostring(id) .. tostring(extname))
+      return callback(nil, texture)
+    end
+    if not (fs:isFileExist(pathToFile)) then
+      return callback("missing file at:" .. tostring(pathToFile))
+    end
+    texture = TextureCache:addImage(pathToFile)
     return callback(nil, texture)
+  end,
+  getTexturesFromJSON = function(data, callback)
+    local textureIds = (data.texture or EMPTY_TABLE)[TEXTURE_FIELD_ID]
+    if type(textureIds) == "string" then
+      textureIds = {
+        textureIds
+      }
+    end
+    if not (type(textureIds) == "table" and #textureIds > 0) then
+      return callback("invalid textureIds:" .. tostring(textureIds) .. ", field:" .. tostring(TEXTURE_FIELD_ID))
+    end
+    async.mapSeries(textureIds, gama.getTextureById, callback)
   end
-  if not (fs:isFileExist(pathToFile)) then
-    return callback("missing file at:" .. tostring(pathToFile))
-  end
-  texture = TextureCache:addImage(pathToFile)
-  print("[gama::getTextureById] texture:" .. tostring(texture))
-  return callback(nil, texture)
-end
-gama.getTexturesFromJSON = function(data, callback)
-  local textureIds = (data.texture or EMPTY_TABLE)[TEXTURE_FIELD_ID]
-  if type(textureIds) == "string" then
-    textureIds = {
-      textureIds
-    }
-  end
-  if not (type(textureIds) == "table" and #textureIds > 0) then
-    return callback("invalid textureIds:" .. tostring(textureIds) .. ", field:" .. tostring(TEXTURE_FIELD_ID))
-  end
-  async.mapSeries(textureIds, gama.getTextureById, callback)
-end
+}
 gama.animation = {
   getById = function(id, callback)
     print("[gama::animation::getById] id:" .. tostring(id))
@@ -137,10 +136,8 @@ gama.animation = {
       count = count + 1
       local frame = SpriteFrameCache:getSpriteFrame(frameName)
       if frame then
-        print("[animation::buildSpriteFrameCache] find frame in cache, asset frame name: " .. tostring(frameName))
         table.insert(assetFrames, frame)
       else
-        print("[animation::buildSpriteFrameCache] build up from json, asset frame name: " .. tostring(frameName))
         local rect = cc.rect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h)
         frame = cc.SpriteFrame:createWithTexture(texture, rect)
         frame:setOriginalSizeInPixels(cc.size(512, 512))

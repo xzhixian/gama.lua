@@ -47,88 +47,88 @@ class GamaAnimation
 
 
 ------------ 补丁 : start --------------------
-export gama = gama or {}
-gama.VERSION = "0.1.0"
+export gama
 
-gama.getAssetPath = (id)-> "assets/#{id}"
+gama =
+  VERSION:  "0.1.0"
 
-gama.readJSON = (id)->
-  path =  "assets/#{id}.csx"
-  print "[gama::readJSON] path:#{path}"
+  getAssetPath: (id)-> "assets/#{id}"
 
-  unless fs\isFileExist path
-    print "[gama::readJSON] file not found:#{path}"
-    return nil
+  readJSON: (id)->
+    path =  "assets/#{id}.csx"
+    print "[gama::readJSON] path:#{path}"
 
-  content = fs\getStringFromFile path
+    unless fs\isFileExist path
+      print "[gama::readJSON] file not found:#{path}"
+      return nil
 
-  -- TODO: use sting.match
-  return json.decode content
+    content = fs\getStringFromFile path
 
--- return the asset type of given asset id
--- @param id
--- @return asset type, or nil
-gama.getTypeById = (id)->
+    -- TODO: use sting.match
+    return json.decode content
 
-  type = ASSET_ID_TO_TYPE_KV[id]
-  return type if type
+  -- return the asset type of given asset id
+  -- @param id
+  -- @return asset type, or nil
+  getTypeById:  (id)->
 
-  obj = gama.readJSON id
-  return nil unless obj
+    type = ASSET_ID_TO_TYPE_KV[id]
+    return type if type
 
-  type = obj["type"]
-  ASSET_ID_TO_TYPE_KV[id] = type
+    obj = gama.readJSON id
+    return nil unless obj
 
-  print "[gama::getTypeById] type:#{type}"
+    type = obj["type"]
+    ASSET_ID_TO_TYPE_KV[id] = type
 
-  return type
+    print "[gama::getTypeById] type:#{type}"
 
+    return type
 
---- getTextureById
--- 获取纹理
--- @param id asset id
--- @param extname
--- @param callback , signature: callback(err, texture2D)
-gama.getTextureById = (id, callback)->
+  --- getTextureById
+  -- 获取纹理
+  -- @param id asset id
+  -- @param extname
+  -- @param callback , signature: callback(err, texture2D)
+  getTextureById:  (id, callback)->
 
-  print "[gama::getTextureById] id:#{id}"
+    print "[gama::getTextureById] id:#{id}"
 
-  -- make sure callback is firable
-  callback = callback or DUMMY_CALLBACK
-  assert(type(callback) == "function", "invalid callback: #{callback}")
+    -- make sure callback is firable
+    callback = callback or DUMMY_CALLBACK
+    assert(type(callback) == "function", "invalid callback: #{callback}")
 
-  pathToFile = gama.getAssetPath id
+    pathToFile = gama.getAssetPath id
 
-  print "[gama::getTextureById] pathToFile:#{pathToFile}"
+    --print "[gama::getTextureById] pathToFile:#{pathToFile}"
 
-  texture = TextureCache\getTextureForKey(pathToFile)
+    texture = TextureCache\getTextureForKey(pathToFile)
 
-  -- require texture is avilable
-  if texture
-    print "[gama::getTextureById] texture avilable for id:#{id}#{extname}"
-    return  callback(nil, texture)
+    -- require texture is avilable
+    if texture
+      print "[gama::getTextureById] texture avilable for id:#{id}#{extname}"
+      return  callback(nil, texture)
 
-  return callback "missing file at:#{pathToFile}" unless fs\isFileExist pathToFile
+    return callback "missing file at:#{pathToFile}" unless fs\isFileExist pathToFile
 
-  texture = TextureCache\addImage pathToFile
-  print "[gama::getTextureById] texture:#{texture}"
+    texture = TextureCache\addImage pathToFile
 
-  return callback(nil, texture)
+    return callback(nil, texture)
 
--- 分析 csx json，从里面拉出来 texture id，然后在内存中载入所有所需要的 Texture2D
-gama.getTexturesFromJSON = (data, callback)->
+  -- 分析 csx json，从里面拉出来 texture id，然后在内存中载入所有所需要的 Texture2D
+  getTexturesFromJSON: (data, callback)->
 
-  -- work out required texture ids
-  textureIds = (data.texture or EMPTY_TABLE)[TEXTURE_FIELD_ID]
+    -- work out required texture ids
+    textureIds = (data.texture or EMPTY_TABLE)[TEXTURE_FIELD_ID]
 
-  textureIds = {textureIds} if type(textureIds) == "string"
+    textureIds = {textureIds} if type(textureIds) == "string"
 
-  return callback "invalid textureIds:#{textureIds}, field:#{TEXTURE_FIELD_ID}" unless type(textureIds) == "table" and #textureIds > 0
+    return callback "invalid textureIds:#{textureIds}, field:#{TEXTURE_FIELD_ID}" unless type(textureIds) == "table" and #textureIds > 0
 
-  -- 根据 textureIds 准备好 texture2D 实例
-  async.mapSeries textureIds, gama.getTextureById, callback
+    -- 根据 textureIds 准备好 texture2D 实例
+    async.mapSeries textureIds, gama.getTextureById, callback
 
-  return
+    return
 
 -- Animation module
 gama.animation =
@@ -185,13 +185,11 @@ gama.animation =
       frame = SpriteFrameCache\getSpriteFrame(frameName)
 
       if frame
-        print "[animation::buildSpriteFrameCache] find frame in cache, asset frame name: #{frameName}"
+        --print "[animation::buildSpriteFrameCache] find frame in cache, asset frame name: #{frameName}"
         table.insert assetFrames, frame
 
       else
-
-        print "[animation::buildSpriteFrameCache] build up from json, asset frame name: #{frameName}"
-
+        --print "[animation::buildSpriteFrameCache] build up from json, asset frame name: #{frameName}"
         rect = cc.rect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h)
 
         frame = cc.SpriteFrame\createWithTexture(texture, rect)
@@ -222,7 +220,6 @@ gama.tilemap =
 
     -- 根据 json 准备好 texture2D 实例
     gama.getTexturesFromJSON data, (err, texture2Ds)->
-
 
     return
 
