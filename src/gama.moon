@@ -29,12 +29,14 @@ TEXTURE_FIELD_ID = "png_8bit"
 SPF = 1 / 15
 
 -- 数据模型类: Gama 动画单元
+-- GamaAnimation 是一个素材类，不是具体的物体类
 class GamaAnimation
   -- 构造函数
-  -- @param texture cc.Texture2D
   -- @param ccAnimation cc.Animation
-  new: (texture, ccAnimation)=>
-    @texture = texture
+  new: (id, ccAnimation)=>
+    assert id, "missing animation id"
+    assert ccAnimation, "missing ccAnimation"
+    @id = id
     @ccAnimation = ccAnimation
 
   -- play this animation on the given sprite
@@ -45,6 +47,46 @@ class GamaAnimation
     sprite\runAction(action)
     return
 
+class GamaFigure
+
+  -- @param {table} data
+  --        数据结构：
+  --                  动作
+  --                    方向
+  --                      ccAnimation
+  new: (id, data, defaultMotion, defaultDirection)=>
+    assert id, "missing figure id"
+    assert data, "missing figure data"
+    @id = id
+    @data = data
+    @defaultMotion = defaultMotion
+    @defaultDirection = defaultDirection
+
+  setDefaultMotion: (value)=> @defaultMotion = value
+
+  setDefaultDirection: (value)=> @defaultDirection = value
+
+  -- play this animation on the given sprite
+  -- @param sprite  cc.Sprite
+  playOnSprite: (sprite, motionName, direction)=>
+    animationName = "#{@id}/#{motionName}/#{direction}"
+    animation = AnimationCache\getAnimation animationName   -- 先到缓存里面找
+    unless animation
+      print "[GamaFigure(#{playOnSprite})::playOnSprite] missing animation for motionName:#{motionName}, direction:#{direction}, use defaults"
+      animation = AnimationCache\getAnimation "#{@id}/#{@defaultMotion}/#{@defaultDirection}"
+      unless animation
+        print "[GamaFigure(#{playOnSprite})::playOnSprite] no default animation"
+        return
+
+    print "[gama::!!!!] animation:#{animation}"
+    print "[gama::!!!!@@@] animation.getFrames():"
+    console.dir animation\getFrames()
+
+    animate = cc.Animate\create animation
+    print "[gama::@@@@] animate:#{animate}"
+    action = cc.RepeatForever\create(animate)
+    sprite\runAction(action)
+    return
 
 ------------ 补丁 : start --------------------
 export gama
@@ -169,9 +211,6 @@ gama.texture2D =
     return assetFrames
 
 
-
-
-
 -- Animation module
 gama.animation =
 
@@ -203,7 +242,7 @@ gama.animation =
         animation = cc.Animation\createWithSpriteFrames(playframes, SPF)
         AnimationCache\addAnimation(animation, id)  -- 加入到缓存，避免再次计算
 
-      gamaAnimation = GamaAnimation(texture2Ds[1], animation)
+      gamaAnimation = GamaAnimation(id, animation)
 
       callback nil, gamaAnimation
 
@@ -236,8 +275,11 @@ gama.figure =
         gama.texture2D.makeSpriteFrames(id, texture, arrangement, assetFrames)
 
       for motionName, directionSet in pairs data.playframes
+        print "[gama::method] motionName:#{motionName}"
+
         for direction, assetFrameIds in pairs directionSet
           animationName = "#{id}/#{motionName}/#{direction}"
+          print "[gama::method] direction:#{direction}"
 
           animation = AnimationCache\getAnimation animationName   -- 先到缓存里面找
 
@@ -248,8 +290,10 @@ gama.figure =
           else
 
             playframes = {}
-            for assetId in *playframes
+            for assetId in *assetFrameIds
               assetFrame = assetFrames["#{id}/#{assetId}"]
+              print "[gama::assetFrame] #{assetFrame}, id: #{id}/#{assetId} "
+
               table.insert(playframes, assetFrame) if assetFrame
 
             animation = cc.Animation\createWithSpriteFrames(playframes, SPF)
@@ -259,10 +303,8 @@ gama.figure =
       console.info "[gama] got assetFrames"
       console.dir  data.playframes
 
-
-
-
-
+      instance = GamaFigure(id, data.playframes)
+      callback nil, instance
 
     return
 

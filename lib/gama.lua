@@ -22,8 +22,10 @@ do
   }
   _base_0.__index = _base_0
   local _class_0 = setmetatable({
-    __init = function(self, texture, ccAnimation)
-      self.texture = texture
+    __init = function(self, id, ccAnimation)
+      assert(id, "missing animation id")
+      assert(ccAnimation, "missing ccAnimation")
+      self.id = id
       self.ccAnimation = ccAnimation
     end,
     __base = _base_0,
@@ -38,6 +40,58 @@ do
   })
   _base_0.__class = _class_0
   GamaAnimation = _class_0
+end
+local GamaFigure
+do
+  local _base_0 = {
+    setDefaultMotion = function(self, value)
+      self.defaultMotion = value
+    end,
+    setDefaultDirection = function(self, value)
+      self.defaultDirection = value
+    end,
+    playOnSprite = function(self, sprite, motionName, direction)
+      local animationName = tostring(self.id) .. "/" .. tostring(motionName) .. "/" .. tostring(direction)
+      local animation = AnimationCache:getAnimation(animationName)
+      if not (animation) then
+        print("[GamaFigure(" .. tostring(playOnSprite) .. ")::playOnSprite] missing animation for motionName:" .. tostring(motionName) .. ", direction:" .. tostring(direction) .. ", use defaults")
+        animation = AnimationCache:getAnimation(tostring(self.id) .. "/" .. tostring(self.defaultMotion) .. "/" .. tostring(self.defaultDirection))
+        if not (animation) then
+          print("[GamaFigure(" .. tostring(playOnSprite) .. ")::playOnSprite] no default animation")
+          return 
+        end
+      end
+      print("[gama::!!!!] animation:" .. tostring(animation))
+      print("[gama::!!!!@@@] animation.getFrames():")
+      console.dir(animation:getFrames())
+      local animate = cc.Animate:create(animation)
+      print("[gama::@@@@] animate:" .. tostring(animate))
+      local action = cc.RepeatForever:create(animate)
+      sprite:runAction(action)
+    end
+  }
+  _base_0.__index = _base_0
+  local _class_0 = setmetatable({
+    __init = function(self, id, data, defaultMotion, defaultDirection)
+      assert(id, "missing figure id")
+      assert(data, "missing figure data")
+      self.id = id
+      self.data = data
+      self.defaultMotion = defaultMotion
+      self.defaultDirection = defaultDirection
+    end,
+    __base = _base_0,
+    __name = "GamaFigure"
+  }, {
+    __index = _base_0,
+    __call = function(cls, ...)
+      local _self_0 = setmetatable({}, _base_0)
+      cls.__init(_self_0, ...)
+      return _self_0
+    end
+  })
+  _base_0.__class = _class_0
+  GamaFigure = _class_0
 end
 gama = {
   VERSION = "0.1.0",
@@ -143,7 +197,7 @@ gama.animation = {
         animation = cc.Animation:createWithSpriteFrames(playframes, SPF)
         AnimationCache:addAnimation(animation, id)
       end
-      local gamaAnimation = GamaAnimation(texture2Ds[1], animation)
+      local gamaAnimation = GamaAnimation(id, animation)
       return callback(nil, gamaAnimation)
     end)
   end
@@ -167,16 +221,19 @@ gama.figure = {
         gama.texture2D.makeSpriteFrames(id, texture, arrangement, assetFrames)
       end
       for motionName, directionSet in pairs(data.playframes) do
+        print("[gama::method] motionName:" .. tostring(motionName))
         for direction, assetFrameIds in pairs(directionSet) do
           local animationName = tostring(id) .. "/" .. tostring(motionName) .. "/" .. tostring(direction)
+          print("[gama::method] direction:" .. tostring(direction))
           local animation = AnimationCache:getAnimation(animationName)
           if animation then
             directionSet[direction] = animation
           else
             local playframes = { }
-            for _index_0 = 1, #playframes do
-              local assetId = playframes[_index_0]
+            for _index_0 = 1, #assetFrameIds do
+              local assetId = assetFrameIds[_index_0]
               local assetFrame = assetFrames[tostring(id) .. "/" .. tostring(assetId)]
+              print("[gama::assetFrame] " .. tostring(assetFrame) .. ", id: " .. tostring(id) .. "/" .. tostring(assetId) .. " ")
               if assetFrame then
                 table.insert(playframes, assetFrame)
               end
@@ -188,7 +245,9 @@ gama.figure = {
         end
       end
       console.info("[gama] got assetFrames")
-      return console.dir(data.playframes)
+      console.dir(data.playframes)
+      local instance = GamaFigure(id, data.playframes)
+      return callback(nil, instance)
     end)
   end
 }
