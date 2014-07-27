@@ -183,19 +183,6 @@ do
         self.container:addChild(sprite)
       end
       return self.container:setPosition(self.windowWidth / 2, self.windowHeigth / 2)
-    end,
-    drawOnSprite = function(self, sprite, tileId)
-      assert(sprite, "invalid sprite")
-      assert(tileId > 0, "invalid tileId")
-      sprite:cleanup()
-      local texture = self.texture2Ds[math.ceil(tileId / self.numOfTilePerTexture)]
-      if not (texture) then
-        print("[GamaTilemap(" .. tostring(self.id) .. ")] ERROR, no texture of tileId:" .. tostring(tileId))
-        return 
-      end
-      sprite:setTexture(texture)
-      local rect = cc.rect(0, 0, self.pixelTileSize, self.pixelTileSize)
-      sprite:setTextureRect(rect)
     end
   }
   _base_0.__index = _base_0

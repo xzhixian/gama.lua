@@ -181,29 +181,15 @@ class GamaTilemap
       texture = @texture2Ds[math.ceil(tileId / @numOfTilePerTexture)]
       sprite = cc.Sprite\createWithTexture texture
       x = ((tileId % @tileWidth) - 1) * @pixelTileSize
-      y = math.floor(tileId / @tileWidth) * @pixelTileSize
+      y = - (math.floor(tileId / @tileWidth) * @pixelTileSize)
       sprite\setAnchorPoint(0, 1)
       console.log "[GamaTilemap::bindToSprite] tileId:#{tileId}, x:#{x}, y:#{y}"
+
       sprite\setTextureRect(cc.rect(0, 0, @pixelTileSize, @pixelTileSize))
-      --sprite\setPosition(x, y)
+      sprite\setPosition(x, y)
       @container\addChild sprite
 
     @container\setPosition(@windowWidth / 2, @windowHeigth / 2)
-
-  drawOnSprite: (sprite, tileId)=>
-    assert sprite, "invalid sprite"
-    assert tileId > 0, "invalid tileId"
-
-    sprite\cleanup!
-    texture = @texture2Ds[math.ceil(tileId / @numOfTilePerTexture)]
-    unless texture
-      print "[GamaTilemap(#{@id})] ERROR, no texture of tileId:#{tileId}"
-      return
-
-    sprite\setTexture texture
-    rect = cc.rect(0, 0, @pixelTileSize, @pixelTileSize)
-    sprite\setTextureRect rect
-    return
 
 export gama
 
