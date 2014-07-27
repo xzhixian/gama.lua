@@ -179,17 +179,20 @@ do
       self.container = sprite
       self.container:setAnchorPoint(0, 1)
       for tileId = 1, self.tileCount do
-        local texture = self.texture2Ds[math.ceil(tileId / self.numOfTilePerTexture)]
+        local textureId = math.ceil(tileId / self.numOfTilePerTexture)
+        local texture = self.texture2Ds[textureId]
         sprite = cc.Sprite:createWithTexture(texture)
-        local x = ((tileId % self.tileWidth) - 1) * self.pixelTileSize
+        local x = (tileId - 1) % self.tileWidth * self.pixelTileSize
         local y = -(math.floor(tileId / self.tileWidth) * self.pixelTileSize)
         sprite:setAnchorPoint(0, 1)
         console.log("[GamaTilemap::bindToSprite] tileId:" .. tostring(tileId) .. ", x:" .. tostring(x) .. ", y:" .. tostring(y))
-        sprite:setTextureRect(cc.rect(0, 0, self.pixelTileSize, self.pixelTileSize))
+        local tileIdInTexture = tileId % self.numOfTilePerTexture
+        local rectX = tileIdInTexture % self.numOfTilePerRow * self.pixelTileSize
+        local rectY = math.floor(tileIdInTexture / self.numOfTilePerRow) * self.pixelTileSize
+        sprite:setTextureRect(cc.rect(rectX, rectY, self.pixelTileSize, self.pixelTileSize))
         sprite:setPosition(x, y)
         self.container:addChild(sprite)
       end
-      return self.container:setPosition(self.windowWidth / 2, self.windowHeigth / 2)
     end
   }
   _base_0.__index = _base_0
@@ -210,7 +213,8 @@ do
       self.tileWidth = math.ceil(pixelWidth / pixelTileSize)
       self.tileHeight = math.ceil(pixelHeight / pixelTileSize)
       self.tileCount = self.tileWidth * self.tileHeight
-      self.numOfTilePerTexture = (PIXEL_TEXTURE_SIZE / pixelTileSize) * (PIXEL_TEXTURE_SIZE / pixelTileSize)
+      self.numOfTilePerRow = PIXEL_TEXTURE_SIZE / pixelTileSize
+      self.numOfTilePerTexture = self.numOfTilePerRow * self.numOfTilePerRow
       local winSize = cc.Director:getInstance():getWinSize()
       self.windowHeigth = winSize.height
       self.windowWidth = winSize.width

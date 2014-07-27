@@ -168,7 +168,8 @@ class GamaTilemap
     @tileWidth = math.ceil(pixelWidth / pixelTileSize)
     @tileHeight = math.ceil(pixelHeight / pixelTileSize)
     @tileCount = @tileWidth * @tileHeight
-    @numOfTilePerTexture = (PIXEL_TEXTURE_SIZE / pixelTileSize) * (PIXEL_TEXTURE_SIZE / pixelTileSize)
+    @numOfTilePerRow = PIXEL_TEXTURE_SIZE / pixelTileSize
+    @numOfTilePerTexture = @numOfTilePerRow * @numOfTilePerRow
     winSize = cc.Director\getInstance!\getWinSize!
     @windowHeigth = winSize.height
     @windowWidth = winSize.width
@@ -180,18 +181,23 @@ class GamaTilemap
     @container\setAnchorPoint(0, 1)
 
     for tileId = 1, @tileCount
-      texture = @texture2Ds[math.ceil(tileId / @numOfTilePerTexture)]
+      textureId = math.ceil(tileId / @numOfTilePerTexture)
+      texture = @texture2Ds[textureId]
       sprite = cc.Sprite\createWithTexture texture
-      x = ((tileId % @tileWidth) - 1) * @pixelTileSize
+      x = (tileId - 1) % @tileWidth * @pixelTileSize
       y = -(math.floor(tileId / @tileWidth) * @pixelTileSize)
       sprite\setAnchorPoint(0, 1)
       console.log "[GamaTilemap::bindToSprite] tileId:#{tileId}, x:#{x}, y:#{y}"
 
-      sprite\setTextureRect(cc.rect(0, 0, @pixelTileSize, @pixelTileSize))
+      tileIdInTexture = tileId % @numOfTilePerTexture
+      rectX = tileIdInTexture % @numOfTilePerRow * @pixelTileSize
+      rectY = math.floor(tileIdInTexture / @numOfTilePerRow) * @pixelTileSize
+
+      sprite\setTextureRect(cc.rect(rectX, rectY, @pixelTileSize, @pixelTileSize))
       sprite\setPosition(x, y)
       @container\addChild sprite
 
-    @container\setPosition(@windowWidth / 2, @windowHeigth / 2)
+    --@container\setPosition(@windowWidth / 2, @windowHeigth / 2)
 
 export gama
 
