@@ -167,6 +167,23 @@ end
 local GamaTilemap
 do
   local _base_0 = {
+    bindToSprite = function(self, sprite)
+      assert(sprite, "invalid sprite")
+      sprite:cleanup()
+      self.container = sprite
+      self.container:setAnchorPoint(0, 1)
+      for tileId = 1, self.tileCount do
+        local texture = self.texture2Ds[math.ceil(tileId / self.numOfTilePerTexture)]
+        sprite = cc.Sprite:createWithTexture(texture)
+        local x = ((tileId % self.tileWidth) - 1) * self.pixelTileSize
+        local y = math.floor(tileId / self.tileWidth) * self.pixelTileSize
+        sprite:setAnchorPoint(0, 1)
+        console.log("[GamaTilemap::bindToSprite] tileId:" .. tostring(tileId) .. ", x:" .. tostring(x) .. ", y:" .. tostring(y))
+        sprite:setTextureRect(cc.rect(0, 0, self.pixelTileSize, self.pixelTileSize))
+        self.container:addChild(sprite)
+      end
+      return self.container:setPosition(self.windowWidth / 2, self.windowHeigth / 2)
+    end,
     drawOnSprite = function(self, sprite, tileId)
       assert(sprite, "invalid sprite")
       assert(tileId > 0, "invalid tileId")
@@ -198,7 +215,11 @@ do
       self.pixelTileSize = pixelTileSize
       self.tileWidth = math.ceil(pixelWidth / pixelTileSize)
       self.tileHeight = math.ceil(pixelHeight / pixelTileSize)
+      self.tileCount = self.tileWidth * self.tileHeight
       self.numOfTilePerTexture = (PIXEL_TEXTURE_SIZE / pixelTileSize) * (PIXEL_TEXTURE_SIZE / pixelTileSize)
+      local winSize = cc.Director:getInstance():getWinSize()
+      self.windowHeigth = winSize.height
+      self.windowWidth = winSize.width
     end,
     __base = _base_0,
     __name = "GamaTilemap"
@@ -216,10 +237,10 @@ end
 gama = {
   VERSION = "0.1.0",
   getAssetPath = function(id)
-    return "assets/" .. tostring(id)
+    return tostring(id)
   end,
   readJSON = function(id)
-    local path = "assets/" .. tostring(id) .. ".csx"
+    local path = tostring(id) .. ".csx"
     print("[gama::readJSON] path:" .. tostring(path))
     if not (fs:isFileExist(path)) then
       print("[gama::readJSON] file not found:" .. tostring(path))

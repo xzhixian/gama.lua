@@ -165,7 +165,30 @@ class GamaTilemap
     @pixelTileSize = pixelTileSize
     @tileWidth = math.ceil(pixelWidth / pixelTileSize)
     @tileHeight = math.ceil(pixelHeight / pixelTileSize)
+    @tileCount = @tileWidth * @tileHeight
     @numOfTilePerTexture = (PIXEL_TEXTURE_SIZE / pixelTileSize) * (PIXEL_TEXTURE_SIZE / pixelTileSize)
+    winSize = cc.Director\getInstance!\getWinSize!
+    @windowHeigth = winSize.height
+    @windowWidth = winSize.width
+
+  bindToSprite: (sprite)=>
+    assert sprite, "invalid sprite"
+    sprite\cleanup!
+    @container = sprite
+    @container\setAnchorPoint(0, 1)
+
+    for tileId = 1, @tileCount
+      texture = @texture2Ds[math.ceil(tileId / @numOfTilePerTexture)]
+      sprite = cc.Sprite\createWithTexture texture
+      x = ((tileId % @tileWidth) - 1) * @pixelTileSize
+      y = math.floor(tileId / @tileWidth) * @pixelTileSize
+      sprite\setAnchorPoint(0, 1)
+      console.log "[GamaTilemap::bindToSprite] tileId:#{tileId}, x:#{x}, y:#{y}"
+      sprite\setTextureRect(cc.rect(0, 0, @pixelTileSize, @pixelTileSize))
+      --sprite\setPosition(x, y)
+      @container\addChild sprite
+
+    @container\setPosition(@windowWidth / 2, @windowHeigth / 2)
 
   drawOnSprite: (sprite, tileId)=>
     assert sprite, "invalid sprite"
@@ -187,10 +210,10 @@ export gama
 gama =
   VERSION:  "0.1.0"
 
-  getAssetPath: (id)-> "assets/#{id}"
+  getAssetPath: (id)-> "#{id}"
 
   readJSON: (id)->
-    path =  "assets/#{id}.csx"
+    path =  "#{id}.csx"
     print "[gama::readJSON] path:#{path}"
 
     unless fs\isFileExist path
