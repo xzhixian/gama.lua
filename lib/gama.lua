@@ -132,10 +132,16 @@ do
       return self.figure:playOnSprite(self.sprite, self.curMotion, self.curDirection)
     end,
     setDirection = function(self, value)
+      if self.curDirection == value then
+        return 
+      end
       self.curDirection = value
       self:applyChange()
     end,
     setMotion = function(self, value)
+      if self.curMotion == value then
+        return 
+      end
       self.curMotion = value
       self:applyChange()
     end
@@ -176,10 +182,11 @@ do
         local texture = self.texture2Ds[math.ceil(tileId / self.numOfTilePerTexture)]
         sprite = cc.Sprite:createWithTexture(texture)
         local x = ((tileId % self.tileWidth) - 1) * self.pixelTileSize
-        local y = math.floor(tileId / self.tileWidth) * self.pixelTileSize
+        local y = -(math.floor(tileId / self.tileWidth) * self.pixelTileSize)
         sprite:setAnchorPoint(0, 1)
         console.log("[GamaTilemap::bindToSprite] tileId:" .. tostring(tileId) .. ", x:" .. tostring(x) .. ", y:" .. tostring(y))
         sprite:setTextureRect(cc.rect(0, 0, self.pixelTileSize, self.pixelTileSize))
+        sprite:setPosition(x, y)
         self.container:addChild(sprite)
       end
       return self.container:setPosition(self.windowWidth / 2, self.windowHeigth / 2)

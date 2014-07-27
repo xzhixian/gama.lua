@@ -135,11 +135,13 @@ class GamaCharacter
     @figure\playOnSprite @sprite, @curMotion, @curDirection
 
   setDirection: (value)=>
+    return if @curDirection == value  --lazy
     @curDirection = value
     @applyChange!
     return
 
   setMotion: (value)=>
+    return if @curMotion == value   --lazy
     @curMotion = value
     @applyChange!
     return
@@ -181,7 +183,7 @@ class GamaTilemap
       texture = @texture2Ds[math.ceil(tileId / @numOfTilePerTexture)]
       sprite = cc.Sprite\createWithTexture texture
       x = ((tileId % @tileWidth) - 1) * @pixelTileSize
-      y = - (math.floor(tileId / @tileWidth) * @pixelTileSize)
+      y = -(math.floor(tileId / @tileWidth) * @pixelTileSize)
       sprite\setAnchorPoint(0, 1)
       console.log "[GamaTilemap::bindToSprite] tileId:#{tileId}, x:#{x}, y:#{y}"
 
