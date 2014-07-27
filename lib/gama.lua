@@ -11,6 +11,16 @@ DUMMY_CALLBACK = function() end
 local EMPTY_TABLE = { }
 local TEXTURE_FIELD_ID = "png_8bit"
 local SPF = 1 / 15
+local DIRECTION_TO_FLIPX = {
+  n = false,
+  ne = false,
+  e = false,
+  se = false,
+  s = false,
+  sw = true,
+  w = true,
+  nw = true
+}
 local GamaAnimation
 do
   local _base_0 = {
@@ -110,7 +120,14 @@ do
     getId = function(self)
       return self.id
     end,
+    getCurDirection = function(self)
+      return self.curDirection
+    end,
+    getCurMotion = function(self)
+      return self.getCurMotion
+    end,
     applyChange = function(self)
+      self.sprite:setFlippedX(DIRECTION_TO_FLIPX[self.curDirection])
       return self.figure:playOnSprite(self.sprite, self.curMotion, self.curDirection)
     end,
     setDirection = function(self, value)

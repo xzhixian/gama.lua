@@ -28,6 +28,18 @@ TEXTURE_FIELD_ID = "png_8bit"
 
 SPF = 1 / 15
 
+-- TODO: following conts should goes into gama
+DIRECTION_TO_FLIPX =
+  n: false
+  ne: false
+  e: false
+  se: false
+  s: false
+  sw: true
+  w: true
+  nw: true
+
+
 -- 数据模型类: Gama 动画单元
 -- GamaAnimation 是一个素材类，不是具体的物体类
 class GamaAnimation
@@ -106,8 +118,6 @@ class GamaCharacter
     @figure = gamaFigure
     @motions = gamaFigure.getMotions
     @sprite = sprite
-    --gamaFigure\setDefaultMotion "idl"
-    --gamaFigure\setDefaultDirection "s"
 
     @curDirection = "s"
     @curMotion = "idl"
@@ -115,7 +125,13 @@ class GamaCharacter
 
   getId: => @id
 
-  applyChange: => @figure\playOnSprite @sprite, @curMotion, @curDirection
+  getCurDirection: => @curDirection
+
+  getCurMotion: => @getCurMotion
+
+  applyChange: =>
+    @sprite\setFlippedX(DIRECTION_TO_FLIPX[@curDirection])
+    @figure\playOnSprite @sprite, @curMotion, @curDirection
 
   setDirection: (value)=>
     @curDirection = value
