@@ -49,6 +49,7 @@ class GamaAnimation
     sprite\runAction(action)
     return
 
+-- 动作造型
 class GamaFigure
 
   -- @param {table} data
@@ -67,6 +68,8 @@ class GamaFigure
     for motionName in pairs data
       table.insert @motions, motionName
 
+  getId: => @id
+
   setDefaultMotion: (value)=> @defaultMotion = value
 
   setDefaultDirection: (value)=> @defaultDirection = value
@@ -76,6 +79,8 @@ class GamaFigure
   -- play this animation on the given sprite
   -- @param sprite  cc.Sprite
   playOnSprite: (sprite, motionName, direction)=>
+    print "[GamaFigure::playOnSprite] sprite:#{sprite}, motionName:#{motionName}, direction:#{direction}"
+
     assert sprite, "invalid sprite"
     animationName = "#{@id}/#{motionName}/#{direction or @defaultDirection}"
     animation = AnimationCache\getAnimation animationName   -- 先到缓存里面找
@@ -92,7 +97,36 @@ class GamaFigure
     sprite\runAction(action)
     return
 
------------- 补丁 : start --------------------
+
+-- 人物
+class GamaCharacter
+
+  new: (id, gamaFigure, sprite)=>
+    @id = id
+    @figure = gamaFigure
+    @motions = gamaFigure.getMotions
+    @sprite = sprite
+    --gamaFigure\setDefaultMotion "idl"
+    --gamaFigure\setDefaultDirection "s"
+
+    @curDirection = "s"
+    @curMotion = "idl"
+    @applyChange!
+
+  getId: => @id
+
+  applyChange: => @figure\playOnSprite @sprite, @curMotion, @curDirection
+
+  setDirection: (value)=>
+    @curDirection = value
+    @applyChange!
+    return
+
+  setMotion: (value)=>
+    @curMotion = value
+    @applyChange!
+    return
+
 export gama
 
 gama =
@@ -131,7 +165,12 @@ gama =
 
     return type
 
-
+  -- 创建一个 GamaFigure 实例，并且将这个实例绑定到用于显示其的 Sprite 上
+  createCharacterWithSprite: (id, gamaFigure, sprite)->
+    assert id
+    assert gamaFigure
+    assert sprite
+    return GamaCharacter(id, gamaFigure, sprite)
 
 -- 管理和处理 texture2D
 gama.texture2D =

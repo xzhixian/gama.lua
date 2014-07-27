@@ -46,6 +46,9 @@ end
 local GamaFigure
 do
   local _base_0 = {
+    getId = function(self)
+      return self.id
+    end,
     setDefaultMotion = function(self, value)
       self.defaultMotion = value
     end,
@@ -56,6 +59,7 @@ do
       return self.motions
     end,
     playOnSprite = function(self, sprite, motionName, direction)
+      print("[GamaFigure::playOnSprite] sprite:" .. tostring(sprite) .. ", motionName:" .. tostring(motionName) .. ", direction:" .. tostring(direction))
       assert(sprite, "invalid sprite")
       local animationName = tostring(self.id) .. "/" .. tostring(motionName) .. "/" .. tostring(direction or self.defaultDirection)
       local animation = AnimationCache:getAnimation(animationName)
@@ -100,6 +104,48 @@ do
   _base_0.__class = _class_0
   GamaFigure = _class_0
 end
+local GamaCharacter
+do
+  local _base_0 = {
+    getId = function(self)
+      return self.id
+    end,
+    applyChange = function(self)
+      return self.figure:playOnSprite(self.sprite, self.curMotion, self.curDirection)
+    end,
+    setDirection = function(self, value)
+      self.curDirection = value
+      self:applyChange()
+    end,
+    setMotion = function(self, value)
+      self.curMotion = value
+      self:applyChange()
+    end
+  }
+  _base_0.__index = _base_0
+  local _class_0 = setmetatable({
+    __init = function(self, id, gamaFigure, sprite)
+      self.id = id
+      self.figure = gamaFigure
+      self.motions = gamaFigure.getMotions
+      self.sprite = sprite
+      self.curDirection = "s"
+      self.curMotion = "idl"
+      return self:applyChange()
+    end,
+    __base = _base_0,
+    __name = "GamaCharacter"
+  }, {
+    __index = _base_0,
+    __call = function(cls, ...)
+      local _self_0 = setmetatable({}, _base_0)
+      cls.__init(_self_0, ...)
+      return _self_0
+    end
+  })
+  _base_0.__class = _class_0
+  GamaCharacter = _class_0
+end
 gama = {
   VERSION = "0.1.0",
   getAssetPath = function(id)
@@ -128,6 +174,12 @@ gama = {
     ASSET_ID_TO_TYPE_KV[id] = type
     print("[gama::getTypeById] type:" .. tostring(type))
     return type
+  end,
+  createCharacterWithSprite = function(id, gamaFigure, sprite)
+    assert(id)
+    assert(gamaFigure)
+    assert(sprite)
+    return GamaCharacter(id, gamaFigure, sprite)
   end
 }
 gama.texture2D = {
