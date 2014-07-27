@@ -9,7 +9,8 @@ local ASSET_ID_TO_TYPE_KV = { }
 local DUMMY_CALLBACK
 DUMMY_CALLBACK = function() end
 local EMPTY_TABLE = { }
-local TEXTURE_FIELD_ID = "png_8bit"
+local TEXTURE_FIELD_ID_1 = "png_8bit"
+local TEXTURE_FIELD_ID_2 = "jpg"
 local SPF = 1 / 15
 local DIRECTION_TO_FLIPX = {
   n = false,
@@ -163,6 +164,55 @@ do
   _base_0.__class = _class_0
   GamaCharacter = _class_0
 end
+local GamaTilemap
+do
+  local _base_0 = {
+    drawOnSprite = function(self, sprite, tileId)
+      assert(sprite, "invalid sprite")
+      assert(tileId > 0, "invalid tileId")
+      sprite:cleanup()
+      local texture = self.texture2Ds[math.ceil(tileId / self.numOfTilePerTexture)]
+      if not (texture) then
+        print("[GamaTilemap(" .. tostring(self.id) .. ")] ERROR, no texture of tileId:" .. tostring(tileId))
+        return 
+      end
+      sprite:setTexture(texture)
+      local rect = cc.rect(0, 0, self.pixelTileSize, self.pixelTileSize)
+      sprite:setTextureRect(rect)
+    end
+  }
+  _base_0.__index = _base_0
+  local _class_0 = setmetatable({
+    __init = function(self, id, texture2Ds, pixelWidth, pixelHeight, pixelTileSize)
+      pixelWidth = tonumber(pixelWidth) or 0
+      pixelHeight = tonumber(pixelHeight) or 0
+      pixelTileSize = tonumber(pixelTileSize) or 0
+      assert(pixelWidth > 0, "invalid pixelWidth:" .. tostring(pixelWidth))
+      assert(pixelHeight > 0, "invalid pixelWidth:" .. tostring(pixelHeight))
+      assert(pixelTileSize > 0, "invalid pixelWidth:" .. tostring(pixelTileSize))
+      local PIXEL_TEXTURE_SIZE = 1024
+      self.id = id
+      self.texture2Ds = texture2Ds
+      self.pixelWidth = pixelWidth
+      self.pixelHeight = pixelHeight
+      self.pixelTileSize = pixelTileSize
+      self.tileWidth = math.ceil(pixelWidth / pixelTileSize)
+      self.tileHeight = math.ceil(pixelHeight / pixelTileSize)
+      self.numOfTilePerTexture = (PIXEL_TEXTURE_SIZE / pixelTileSize) * (PIXEL_TEXTURE_SIZE / pixelTileSize)
+    end,
+    __base = _base_0,
+    __name = "GamaTilemap"
+  }, {
+    __index = _base_0,
+    __call = function(cls, ...)
+      local _self_0 = setmetatable({}, _base_0)
+      cls.__init(_self_0, ...)
+      return _self_0
+    end
+  })
+  _base_0.__class = _class_0
+  GamaTilemap = _class_0
+end
 gama = {
   VERSION = "0.1.0",
   getAssetPath = function(id)
@@ -217,14 +267,17 @@ gama.texture2D = {
     return callback(nil, texture)
   end,
   getFromJSON = function(data, callback)
-    local textureIds = (data.texture or EMPTY_TABLE)[TEXTURE_FIELD_ID]
+    if not (type(data.texture) == "table") then
+      return callback("missing texture decleration")
+    end
+    local textureIds = data.texture[TEXTURE_FIELD_ID_1] or data.texture[TEXTURE_FIELD_ID_2]
     if type(textureIds) == "string" then
       textureIds = {
         textureIds
       }
     end
     if not (type(textureIds) == "table" and #textureIds > 0) then
-      return callback("invalid textureIds:" .. tostring(textureIds) .. ", field:" .. tostring(TEXTURE_FIELD_ID))
+      return callback("invalid textureIds:" .. tostring(textureIds) .. ", field:" .. tostring(TEXTURE_FIELD_ID_1) .. " or " .. tostring(TEXTURE_FIELD_ID_2))
     end
     async.mapSeries(textureIds, gama.texture2D.getById, callback)
   end,
@@ -319,6 +372,24 @@ gama.figure = {
       end
       local instance = GamaFigure(id, data.playframes)
       return callback(nil, instance)
+    end)
+  end
+}
+gama.tilemap = {
+  getById = function(id, callback)
+    print("[gama::tilemap::getById] id:" .. tostring(id))
+    callback = callback or DUMMY_CALLBACK
+    assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
+    local data = gama.readJSON(id)
+    if not (data) then
+      return callback("fail to parse json data from id:" .. tostring(id))
+    end
+    return gama.texture2D.getFromJSON(data, function(err, texture2Ds)
+      if err then
+        return callback(err)
+      end
+      local gamaTilemap = GamaTilemap(id, texture2Ds, data.source_width, data.source_height, data.tile_size)
+      return callback(nil, gamaTilemap)
     end)
   end
 }

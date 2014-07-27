@@ -24,7 +24,8 @@ DUMMY_CALLBACK = ->
 
 EMPTY_TABLE = {}
 
-TEXTURE_FIELD_ID = "png_8bit"
+TEXTURE_FIELD_ID_1 = "png_8bit"
+TEXTURE_FIELD_ID_2 = "jpg"
 
 SPF = 1 / 15
 
@@ -143,6 +144,44 @@ class GamaCharacter
     @applyChange!
     return
 
+
+class GamaTilemap
+
+  new: (id, texture2Ds, pixelWidth, pixelHeight, pixelTileSize)=>
+
+    pixelWidth = tonumber(pixelWidth) or 0
+    pixelHeight = tonumber(pixelHeight) or 0
+    pixelTileSize = tonumber(pixelTileSize) or 0
+
+    assert pixelWidth > 0, "invalid pixelWidth:#{pixelWidth}"
+    assert pixelHeight > 0, "invalid pixelWidth:#{pixelHeight}"
+    assert pixelTileSize > 0, "invalid pixelWidth:#{pixelTileSize}"
+
+    PIXEL_TEXTURE_SIZE = 1024
+    @id = id
+    @texture2Ds = texture2Ds
+    @pixelWidth = pixelWidth
+    @pixelHeight = pixelHeight
+    @pixelTileSize = pixelTileSize
+    @tileWidth = math.ceil(pixelWidth / pixelTileSize)
+    @tileHeight = math.ceil(pixelHeight / pixelTileSize)
+    @numOfTilePerTexture = (PIXEL_TEXTURE_SIZE / pixelTileSize) * (PIXEL_TEXTURE_SIZE / pixelTileSize)
+
+  drawOnSprite: (sprite, tileId)=>
+    assert sprite, "invalid sprite"
+    assert tileId > 0, "invalid tileId"
+
+    sprite\cleanup!
+    texture = @texture2Ds[math.ceil(tileId / @numOfTilePerTexture)]
+    unless texture
+      print "[GamaTilemap(#{@id})] ERROR, no texture of tileId:#{tileId}"
+      return
+
+    sprite\setTexture texture
+    rect = cc.rect(0, 0, @pixelTileSize, @pixelTileSize)
+    sprite\setTextureRect rect
+    return
+
 export gama
 
 gama =
@@ -222,12 +261,14 @@ gama.texture2D =
   -- 分析 csx json，从里面拉出来 texture id，然后在内存中载入所有所需要的 Texture2D
   getFromJSON: (data, callback)->
 
+    return callback "missing texture decleration" unless type(data.texture) == "table"
+
     -- work out required texture ids
-    textureIds = (data.texture or EMPTY_TABLE)[TEXTURE_FIELD_ID]
+    textureIds = data.texture[TEXTURE_FIELD_ID_1] or data.texture[TEXTURE_FIELD_ID_2]
 
     textureIds = {textureIds} if type(textureIds) == "string"
 
-    return callback "invalid textureIds:#{textureIds}, field:#{TEXTURE_FIELD_ID}" unless type(textureIds) == "table" and #textureIds > 0
+    return callback "invalid textureIds:#{textureIds}, field:#{TEXTURE_FIELD_ID_1} or #{TEXTURE_FIELD_ID_2}" unless type(textureIds) == "table" and #textureIds > 0
 
     -- 根据 textureIds 准备好 texture2D 实例
     async.mapSeries textureIds, gama.texture2D.getById, callback
@@ -310,7 +351,7 @@ gama.animation =
 
 gama.figure =
 
-  -- @param {function} callback, signature: callback(err, gamaTilemap)
+  -- @param {function} callback, signature: callback(err, gamaFigure)
   getById:  (id, callback)->
 
     print "[gama::tilemap::getById] id:#{id}"
@@ -359,6 +400,29 @@ gama.figure =
 
     return
 
+
+gama.tilemap =
+
+  -- @param {function} callback, signature: callback(err, gamaTilemap)
+  getById:  (id, callback)->
+
+    print "[gama::tilemap::getById] id:#{id}"
+
+    -- make sure callback is firable
+    callback = callback or DUMMY_CALLBACK
+    assert(type(callback) == "function", "invalid callback: #{callback}")
+
+    data = gama.readJSON id
+    return callback "fail to parse json data from id:#{id}" unless data
+
+    -- 根据 json 准备好 texture2D 实例
+    gama.texture2D.getFromJSON data, (err, texture2Ds)->
+
+      return callback err if err
+
+      gamaTilemap = GamaTilemap(id, texture2Ds, data.source_width, data.source_height, data.tile_size)
+
+      return callback nil, gamaTilemap
 
 
 
