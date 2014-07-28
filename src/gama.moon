@@ -271,9 +271,11 @@ gama.texture2D =
 
     return callback "missing file at:#{pathToFile}" unless fs\isFileExist pathToFile
 
-    texture = TextureCache\addImage pathToFile
+    texture = TextureCache\addImageAsync pathToFile, (texture2D)->
+      return callback "addImageAsync return nil" unless texture2D
+      return callback(nil, texture2D)
 
-    return callback(nil, texture)
+    return
 
   -- 分析 csx json，从里面拉出来 texture id，然后在内存中载入所有所需要的 Texture2D
   getFromJSON: (data, callback)->

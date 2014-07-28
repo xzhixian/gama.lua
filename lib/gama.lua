@@ -282,8 +282,12 @@ gama.texture2D = {
     if not (fs:isFileExist(pathToFile)) then
       return callback("missing file at:" .. tostring(pathToFile))
     end
-    texture = TextureCache:addImage(pathToFile)
-    return callback(nil, texture)
+    texture = TextureCache:addImageAsync(pathToFile, function(texture2D)
+      if not (texture2D) then
+        return callback("addImageAsync return nil")
+      end
+      return callback(nil, texture2D)
+    end)
   end,
   getFromJSON = function(data, callback)
     if not (type(data.texture) == "table") then
