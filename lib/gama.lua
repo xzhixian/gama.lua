@@ -1,4 +1,5 @@
 local async = require("async")
+local cjson = require("cjson")
 print("[gama] init")
 local SpriteFrameCache = cc.SpriteFrameCache:getInstance()
 local TextureCache = cc.Director:getInstance():getTextureCache()
@@ -245,7 +246,7 @@ gama = {
       return nil
     end
     local content = fs:getStringFromFile(path)
-    return json.decode(content)
+    return cjson.decode(content)
   end,
   getTypeById = function(id)
     local type = ASSET_ID_TO_TYPE_KV[id]
@@ -324,14 +325,13 @@ gama.texture2D = {
   end
 }
 gama.animation = {
-  getById = function(id, callback)
-    print("[gama::animation::getById] id:" .. tostring(id))
+  getByCSX = function(data, callback)
     callback = callback or DUMMY_CALLBACK
     assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
-    local data = gama.readJSON(id)
-    if not (data) then
-      return callback("fail to parse json data from id:" .. tostring(id))
+    if not (data and data.id) then
+      return callback("invalid csx json data")
     end
+    local id = data.id
     gama.texture2D.getFromJSON(data, function(err, texture2Ds)
       if err then
         return callback(err)
@@ -352,17 +352,24 @@ gama.animation = {
       local gamaAnimation = GamaAnimation(id, animation)
       return callback(nil, gamaAnimation)
     end)
+  end,
+  getById = function(id, callback)
+    print("[gama::animation::getById] id:" .. tostring(id))
+    gama.animation.getByCSX(gama.readJSON(id), callback)
   end
 }
 gama.figure = {
   getById = function(id, callback)
     print("[gama::tilemap::getById] id:" .. tostring(id))
+    gama.figure.getByCSX(gama.readJSON(id), callback)
+  end,
+  getByCSX = function(data, callback)
     callback = callback or DUMMY_CALLBACK
     assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
-    local data = gama.readJSON(id)
-    if not (data) then
-      return callback("fail to parse json data from id:" .. tostring(id))
+    if not (data and data.id) then
+      return callback("invalid csx json data")
     end
+    local id = data.id
     gama.texture2D.getFromJSON(data, function(err, texture2Ds)
       if err then
         return callback(err)
@@ -401,13 +408,16 @@ gama.figure = {
 gama.tilemap = {
   getById = function(id, callback)
     print("[gama::tilemap::getById] id:" .. tostring(id))
+    gama.tilemap.getByCSX(gama.readJSON(id), callback)
+  end,
+  getByCSX = function(data, callback)
     callback = callback or DUMMY_CALLBACK
     assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
-    local data = gama.readJSON(id)
-    if not (data) then
-      return callback("fail to parse json data from id:" .. tostring(id))
+    if not (data and data.id) then
+      return callback("invalid csx json data")
     end
-    return gama.texture2D.getFromJSON(data, function(err, texture2Ds)
+    local id = data.id
+    gama.texture2D.getFromJSON(data, function(err, texture2Ds)
       if err then
         return callback(err)
       end

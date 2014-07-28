@@ -1,5 +1,6 @@
 
 async = require "async"
+cjson = require "cjson"
 
 print "[gama] init"
 
@@ -217,7 +218,7 @@ gama =
     content = fs\getStringFromFile path
 
     -- TODO: use sting.match
-    return json.decode content
+    return cjson.decode content
 
   -- return the asset type of given asset id
   -- @param id
@@ -333,18 +334,16 @@ gama.texture2D =
 -- Animation module
 gama.animation =
 
-  -- @param {function} callback, signature: callback(err, gamaAnimation)
-  getById:  (id, callback)->
-
-    print "[gama::animation::getById] id:#{id}"
+  -- @param {table} data, csx json data
+  getByCSX: (data, callback)->
 
     -- make sure callback is firable
     callback = callback or DUMMY_CALLBACK
     assert(type(callback) == "function", "invalid callback: #{callback}")
 
-    data = gama.readJSON id
+    return callback "invalid csx json data" unless data and data.id
 
-    return callback "fail to parse json data from id:#{id}" unless data
+    id = data.id
 
     -- 根据 json 准备好 texture2D 实例
     gama.texture2D.getFromJSON data, (err, texture2Ds)->
@@ -368,19 +367,32 @@ gama.animation =
     return
 
 
+  -- @param {function} callback, signature: callback(err, gamaAnimation)
+  getById:  (id, callback)->
+    print "[gama::animation::getById] id:#{id}"
+    gama.animation.getByCSX(gama.readJSON(id), callback)
+    return
+
+
 gama.figure =
 
   -- @param {function} callback, signature: callback(err, gamaFigure)
   getById:  (id, callback)->
-
     print "[gama::tilemap::getById] id:#{id}"
+    gama.figure.getByCSX(gama.readJSON(id), callback)
+    return
+
+
+  -- @param {table} data, csx json data
+  getByCSX: (data, callback)->
 
     -- make sure callback is firable
     callback = callback or DUMMY_CALLBACK
     assert(type(callback) == "function", "invalid callback: #{callback}")
 
-    data = gama.readJSON id
-    return callback "fail to parse json data from id:#{id}" unless data
+    return callback "invalid csx json data" unless data and data.id
+
+    id = data.id
 
     -- 根据 json 准备好 texture2D 实例
     gama.texture2D.getFromJSON data, (err, texture2Ds)->
@@ -424,15 +436,20 @@ gama.tilemap =
 
   -- @param {function} callback, signature: callback(err, gamaTilemap)
   getById:  (id, callback)->
-
     print "[gama::tilemap::getById] id:#{id}"
+    gama.tilemap.getByCSX(gama.readJSON(id), callback)
+    return
+
+  -- @param {table} data, csx json data
+  getByCSX: (data, callback)->
 
     -- make sure callback is firable
     callback = callback or DUMMY_CALLBACK
     assert(type(callback) == "function", "invalid callback: #{callback}")
 
-    data = gama.readJSON id
-    return callback "fail to parse json data from id:#{id}" unless data
+    return callback "invalid csx json data" unless data and data.id
+
+    id = data.id
 
     -- 根据 json 准备好 texture2D 实例
     gama.texture2D.getFromJSON data, (err, texture2Ds)->
@@ -443,5 +460,6 @@ gama.tilemap =
 
       return callback nil, gamaTilemap
 
+    return
 
 
