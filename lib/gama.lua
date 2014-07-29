@@ -199,28 +199,28 @@ do
   local _base_0 = {
     moveBy = function(self, diff)
       console.info("[GamaTilemap::moveBy] x:" .. tostring(diff.x) .. ", y:" .. tostring(diff.y))
-      self:setCenterPosition(self.x + diff.x, self.y + diff.y)
+      self:setCenterPosition(self.x - diff.x, self.y + diff.y)
     end,
     setCenterPosition = function(self, x, y)
       console.log("[gama::setCenterPosition] x:" .. tostring(x) .. ", y:" .. tostring(y))
-      local leftBottomX = x - HALF_WINDOW_WIDTH
-      local leftBottomY = y - HALF_WINDOW_HEIGTH
-      if leftBottomX < self.minLeftBottomX then
-        leftBottomX = self.minLeftBottomX
+      if x < self.minCenterX then
+        x = self.minCenterX
       end
-      if leftBottomX > self.maxLeftBottomX then
-        leftBottomX = self.maxLeftBottomX
+      if x > self.maxCenterX then
+        x = self.maxCenterX
       end
-      if leftBottomY > self.maxLeftBottomY then
-        leftBottomY = self.maxLeftBottomY
+      if y < self.minCenterY then
+        y = self.minCenterY
       end
-      if leftBottomY < self.minLeftBottomY then
-        leftBottomY = self.minLeftBottomY
+      if y > self.maxCenterY then
+        y = self.maxCenterY
       end
-      self.x = leftBottomX + HALF_WINDOW_WIDTH
-      self.y = leftBottomY + HALF_WINDOW_HEIGTH
-      console.log("[gama::setCenterPosition] leftBottomX:" .. tostring(leftBottomX) .. ", leftBottomY:" .. tostring(leftBottomY) .. ", @x:" .. tostring(self.x) .. ", @y:" .. tostring(self.y))
-      self.container:setPosition(leftBottomX, leftBottomY)
+      self.x = x
+      self.y = y
+      self.container:setPosition(HALF_WINDOW_WIDTH - self.x + (self.pixelTileSize / 2), self.y - HALF_WINDOW_HEIGTH)
+    end,
+    getContainerPoisition = function(self)
+      return self.container / getPosition()
     end,
     bindToSprite = function(self, sprite)
       assert(sprite and type(sprite.addChild) == "function", "invalid sprite")
@@ -230,19 +230,20 @@ do
       self.container:setPosition(0, 0)
       sprite:addChild(self.container)
       console.warn("[gama::method] @tileCount:" .. tostring(self.tileCount) .. ", tileWidth:" .. tostring(self.tileWidth) .. ", tileHeight:" .. tostring(self.tileHeight))
+      local yOffset = WINDOW_HEIGTH - (self.pixelTileSize / 2)
       for tileId = 1, self.tileCount do
         local textureId = math.ceil(tileId / self.numOfTilePerTexture)
         local texture = self.texture2Ds[textureId]
         sprite = cc.Sprite:createWithTexture(texture)
         local x = (tileId - 1) % self.tileWidth * self.pixelTileSize
-        local y = -(math.floor((tileId - 1) / self.tileWidth) * self.pixelTileSize)
-        sprite:setAnchorPoint(0, 1)
+        local y = yOffset - (math.floor((tileId - 1) / self.tileWidth) * self.pixelTileSize)
+        sprite:setAnchorPoint(0.5, 0.5)
         local tileIdInTexture = tileId - self.numOfTilePerTexture * (textureId - 1)
         sprite:setTextureRect(TILE_TEXTURE_RECTS[tileIdInTexture])
         sprite:setPosition(x, y)
         self.container:addChild(sprite)
       end
-      self:setCenterPosition(0, 0)
+      self:setCenterPosition(HALF_WINDOW_WIDTH, HALF_WINDOW_HEIGTH)
     end
   }
   _base_0.__index = _base_0
@@ -265,10 +266,10 @@ do
       self.tileCount = self.tileWidth * self.tileHeight
       self.numOfTilePerRow = PIXEL_TEXTURE_SIZE / pixelTileSize
       self.numOfTilePerTexture = self.numOfTilePerRow * self.numOfTilePerRow
-      self.minLeftBottomX = WINDOW_WIDTH - self.pixelWidth
-      self.maxLeftBottomX = 0
-      self.minLeftBottomY = WINDOW_HEIGTH
-      self.maxLeftBottomY = self.pixelHeight
+      self.maxCenterX = self.pixelWidth - HALF_WINDOW_WIDTH
+      self.minCenterX = HALF_WINDOW_WIDTH
+      self.minCenterY = HALF_WINDOW_HEIGTH
+      self.maxCenterY = self.pixelHeight - HALF_WINDOW_HEIGTH
     end,
     __base = _base_0,
     __name = "GamaTilemap"

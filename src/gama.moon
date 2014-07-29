@@ -197,36 +197,41 @@ class GamaTilemap
     @tileCount = @tileWidth * @tileHeight
     @numOfTilePerRow = PIXEL_TEXTURE_SIZE / pixelTileSize
     @numOfTilePerTexture = @numOfTilePerRow * @numOfTilePerRow
-    @minLeftBottomX = WINDOW_WIDTH - @pixelWidth
-    @maxLeftBottomX = 0
-    @minLeftBottomY = WINDOW_HEIGTH
-    @maxLeftBottomY = @pixelHeight
+
+    @maxCenterX = @pixelWidth - HALF_WINDOW_WIDTH
+    @minCenterX = HALF_WINDOW_WIDTH
+    @minCenterY = HALF_WINDOW_HEIGTH
+    @maxCenterY = @pixelHeight - HALF_WINDOW_HEIGTH
+    --@minLeftBottomX = WINDOW_WIDTH - @pixelWidth
+    --@maxLeftBottomX = 0
+    --@minLeftBottomY = WINDOW_HEIGTH
+    --@maxLeftBottomY = @pixelHeight
+    --console.warn "[gama::method] @pixelWidth:#{@pixelWidth}, @pixelHeight:#{@pixelHeight}"
+    --console.warn "[gama::method] minLeftBottomX:#{@minLeftBottomX}, maxLeftBottomX:#{@maxLeftBottomX}, minLeftBottomY:#{@minLeftBottomY}, maxLeftBottomY:#{@maxLeftBottomY}"
 
   moveBy: (diff)=>
     console.info "[GamaTilemap::moveBy] x:#{diff.x}, y:#{diff.y}"
-    @setCenterPosition(@x + diff.x, @y + diff.y)
+    @setCenterPosition(@x - diff.x, @y + diff.y)
     return
 
   -- CPU DOM 坐标系
   setCenterPosition: (x, y)=>
     console.log "[gama::setCenterPosition] x:#{x}, y:#{y}"
 
-    leftBottomX = x - HALF_WINDOW_WIDTH
-    leftBottomY = y - HALF_WINDOW_HEIGTH
+    x = @minCenterX if x < @minCenterX
+    x = @maxCenterX if x > @maxCenterX
+    y = @minCenterY if y < @minCenterY
+    y = @maxCenterY if y > @maxCenterY
 
-    leftBottomX = @minLeftBottomX if leftBottomX < @minLeftBottomX
-    leftBottomX = @maxLeftBottomX if leftBottomX > @maxLeftBottomX
+    @x = x
+    @y = y
 
-    leftBottomY = @maxLeftBottomY if leftBottomY > @maxLeftBottomY
-    leftBottomY = @minLeftBottomY if leftBottomY < @minLeftBottomY
-
-    @x = leftBottomX + HALF_WINDOW_WIDTH
-    @y = leftBottomY + HALF_WINDOW_HEIGTH
-
-    console.log "[gama::setCenterPosition] leftBottomX:#{leftBottomX}, leftBottomY:#{leftBottomY}, @x:#{@x}, @y:#{@y}"
-    @container\setPosition(leftBottomX, leftBottomY)
+    @container\setPosition(HALF_WINDOW_WIDTH - @x + (@pixelTileSize / 2) , @y - HALF_WINDOW_HEIGTH)
     return
 
+  getContainerPoisition: => @container/getPosition!
+
+  -- 将地图构建到给定的 sprite 容器
   bindToSprite: (sprite)=>
     assert sprite and type(sprite.addChild) == "function", "invalid sprite"
     --sprite\cleanup!
@@ -238,13 +243,15 @@ class GamaTilemap
 
     console.warn "[gama::method] @tileCount:#{@tileCount}, tileWidth:#{@tileWidth}, tileHeight:#{@tileHeight}"
 
+    yOffset = WINDOW_HEIGTH - (@pixelTileSize / 2)
+
     for tileId = 1, @tileCount
       textureId = math.ceil(tileId / @numOfTilePerTexture)
       texture = @texture2Ds[textureId]
       sprite = cc.Sprite\createWithTexture texture
       x = (tileId - 1) % @tileWidth * @pixelTileSize
-      y = -(math.floor((tileId - 1) / @tileWidth) * @pixelTileSize)
-      sprite\setAnchorPoint(0, 1)
+      y = yOffset - (math.floor((tileId - 1) / @tileWidth) * @pixelTileSize)
+      sprite\setAnchorPoint(0.5, 0.5)
 
       tileIdInTexture = tileId - @numOfTilePerTexture * (textureId - 1)
       --console.log "[GamaTilemap::bindToSprite] tileId:#{tileId}, x:#{x}, y:#{y}, textureId:#{textureId}, tileIdInTexture:#{tileIdInTexture}"
@@ -253,7 +260,7 @@ class GamaTilemap
       @container\addChild sprite
 
     --@container\setPosition(0, @pixelHeight)
-    @setCenterPosition(0, 0)
+    @setCenterPosition(HALF_WINDOW_WIDTH, HALF_WINDOW_HEIGTH)
     return
 
 export gama
