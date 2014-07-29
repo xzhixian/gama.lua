@@ -11,6 +11,12 @@ AnimationCache = cc.AnimationCache\getInstance!
 fs = cc.FileUtils\getInstance!
 fs\addSearchPath "gama/"
 
+WIN_SIZE = cc.Director\getInstance!\getWinSize!
+WINDOW_HEIGTH = WIN_SIZE.height
+WINDOW_WIDTH = WIN_SIZE.width
+HALF_WINDOW_HEIGTH = WINDOW_HEIGTH / 2
+HALF_WINDOW_WIDTH = WINDOW_WIDTH / 2
+
 -- key: asset id
 -- value: asset type
 ASSET_ID_TO_TYPE_KV = {}
@@ -191,9 +197,35 @@ class GamaTilemap
     @tileCount = @tileWidth * @tileHeight
     @numOfTilePerRow = PIXEL_TEXTURE_SIZE / pixelTileSize
     @numOfTilePerTexture = @numOfTilePerRow * @numOfTilePerRow
-    winSize = cc.Director\getInstance!\getWinSize!
-    @windowHeigth = winSize.height
-    @windowWidth = winSize.width
+    @minLeftBottomX = WINDOW_WIDTH - @pixelWidth
+    @maxLeftBottomX = 0
+    @minLeftBottomY = WINDOW_HEIGTH
+    @maxLeftBottomY = @pixelHeight
+
+  moveBy: (diff)=>
+    console.info "[GamaTilemap::moveBy] x:#{diff.x}, y:#{diff.y}"
+    @setCenterPosition(@x + diff.x, @y + diff.y)
+    return
+
+  -- CPU DOM 坐标系
+  setCenterPosition: (x, y)=>
+    console.log "[gama::setCenterPosition] x:#{x}, y:#{y}"
+
+    leftBottomX = x - HALF_WINDOW_WIDTH
+    leftBottomY = y - HALF_WINDOW_HEIGTH
+
+    leftBottomX = @minLeftBottomX if leftBottomX < @minLeftBottomX
+    leftBottomX = @maxLeftBottomX if leftBottomX > @maxLeftBottomX
+
+    leftBottomY = @maxLeftBottomY if leftBottomY > @maxLeftBottomY
+    leftBottomY = @minLeftBottomY if leftBottomY < @minLeftBottomY
+
+    @x = leftBottomX + HALF_WINDOW_WIDTH
+    @y = leftBottomY + HALF_WINDOW_HEIGTH
+
+    console.log "[gama::setCenterPosition] leftBottomX:#{leftBottomX}, leftBottomY:#{leftBottomY}, @x:#{@x}, @y:#{@y}"
+    @container\setPosition(leftBottomX, leftBottomY)
+    return
 
   bindToSprite: (sprite)=>
     assert sprite and type(sprite.addChild) == "function", "invalid sprite"
@@ -206,7 +238,6 @@ class GamaTilemap
 
     console.warn "[gama::method] @tileCount:#{@tileCount}, tileWidth:#{@tileWidth}, tileHeight:#{@tileHeight}"
 
-
     for tileId = 1, @tileCount
       textureId = math.ceil(tileId / @numOfTilePerTexture)
       texture = @texture2Ds[textureId]
@@ -216,13 +247,15 @@ class GamaTilemap
       sprite\setAnchorPoint(0, 1)
 
       tileIdInTexture = tileId - @numOfTilePerTexture * (textureId - 1)
-      console.log "[GamaTilemap::bindToSprite] tileId:#{tileId}, x:#{x}, y:#{y}, textureId:#{textureId}, tileIdInTexture:#{tileIdInTexture}"
-      --sprite\setTextureRect(cc.rect(rectX, rectY, @pixelTileSize, @pixelTileSize))
+      --console.log "[GamaTilemap::bindToSprite] tileId:#{tileId}, x:#{x}, y:#{y}, textureId:#{textureId}, tileIdInTexture:#{tileIdInTexture}"
       sprite\setTextureRect(TILE_TEXTURE_RECTS[tileIdInTexture])
       sprite\setPosition(x, y)
       @container\addChild sprite
 
-    @container\setPosition(0, @pixelHeight)
+    --@container\setPosition(0, @pixelHeight)
+    @setCenterPosition(0, 0)
+    return
+
 export gama
 
 gama =

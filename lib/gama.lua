@@ -6,6 +6,11 @@ local TextureCache = cc.Director:getInstance():getTextureCache()
 local AnimationCache = cc.AnimationCache:getInstance()
 local fs = cc.FileUtils:getInstance()
 fs:addSearchPath("gama/")
+local WIN_SIZE = cc.Director:getInstance():getWinSize()
+local WINDOW_HEIGTH = WIN_SIZE.height
+local WINDOW_WIDTH = WIN_SIZE.width
+local HALF_WINDOW_HEIGTH = WINDOW_HEIGTH / 2
+local HALF_WINDOW_WIDTH = WINDOW_WIDTH / 2
 local ASSET_ID_TO_TYPE_KV = { }
 local DUMMY_CALLBACK
 DUMMY_CALLBACK = function() end
@@ -192,6 +197,31 @@ end
 local GamaTilemap
 do
   local _base_0 = {
+    moveBy = function(self, diff)
+      console.info("[GamaTilemap::moveBy] x:" .. tostring(diff.x) .. ", y:" .. tostring(diff.y))
+      self:setCenterPosition(self.x + diff.x, self.y + diff.y)
+    end,
+    setCenterPosition = function(self, x, y)
+      console.log("[gama::setCenterPosition] x:" .. tostring(x) .. ", y:" .. tostring(y))
+      local leftBottomX = x - HALF_WINDOW_WIDTH
+      local leftBottomY = y - HALF_WINDOW_HEIGTH
+      if leftBottomX < self.minLeftBottomX then
+        leftBottomX = self.minLeftBottomX
+      end
+      if leftBottomX > self.maxLeftBottomX then
+        leftBottomX = self.maxLeftBottomX
+      end
+      if leftBottomY > self.maxLeftBottomY then
+        leftBottomY = self.maxLeftBottomY
+      end
+      if leftBottomY < self.minLeftBottomY then
+        leftBottomY = self.minLeftBottomY
+      end
+      self.x = leftBottomX + HALF_WINDOW_WIDTH
+      self.y = leftBottomY + HALF_WINDOW_HEIGTH
+      console.log("[gama::setCenterPosition] leftBottomX:" .. tostring(leftBottomX) .. ", leftBottomY:" .. tostring(leftBottomY) .. ", @x:" .. tostring(self.x) .. ", @y:" .. tostring(self.y))
+      self.container:setPosition(leftBottomX, leftBottomY)
+    end,
     bindToSprite = function(self, sprite)
       assert(sprite and type(sprite.addChild) == "function", "invalid sprite")
       sprite:setAnchorPoint(0, 0)
@@ -208,12 +238,11 @@ do
         local y = -(math.floor((tileId - 1) / self.tileWidth) * self.pixelTileSize)
         sprite:setAnchorPoint(0, 1)
         local tileIdInTexture = tileId - self.numOfTilePerTexture * (textureId - 1)
-        console.log("[GamaTilemap::bindToSprite] tileId:" .. tostring(tileId) .. ", x:" .. tostring(x) .. ", y:" .. tostring(y) .. ", textureId:" .. tostring(textureId) .. ", tileIdInTexture:" .. tostring(tileIdInTexture))
         sprite:setTextureRect(TILE_TEXTURE_RECTS[tileIdInTexture])
         sprite:setPosition(x, y)
         self.container:addChild(sprite)
       end
-      return self.container:setPosition(0, self.pixelHeight)
+      self:setCenterPosition(0, 0)
     end
   }
   _base_0.__index = _base_0
@@ -236,9 +265,10 @@ do
       self.tileCount = self.tileWidth * self.tileHeight
       self.numOfTilePerRow = PIXEL_TEXTURE_SIZE / pixelTileSize
       self.numOfTilePerTexture = self.numOfTilePerRow * self.numOfTilePerRow
-      local winSize = cc.Director:getInstance():getWinSize()
-      self.windowHeigth = winSize.height
-      self.windowWidth = winSize.width
+      self.minLeftBottomX = WINDOW_WIDTH - self.pixelWidth
+      self.maxLeftBottomX = 0
+      self.minLeftBottomY = WINDOW_HEIGTH
+      self.maxLeftBottomY = self.pixelHeight
     end,
     __base = _base_0,
     __name = "GamaTilemap"
