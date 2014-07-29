@@ -11,6 +11,14 @@ local WINDOW_HEIGTH = WIN_SIZE.height
 local WINDOW_WIDTH = WIN_SIZE.width
 local HALF_WINDOW_HEIGTH = WINDOW_HEIGTH / 2
 local HALF_WINDOW_WIDTH = WINDOW_WIDTH / 2
+local EVENT_START = "start"
+local EVENT_PROGRESS = "progress"
+local EVENT_WARNING = "warning"
+local EVENT_COMPLETE = "complete"
+local EVENT_FAILED = "failed"
+local ASSET_TYPE_CHARACTER = 10
+local ASSET_TYPE_TILEMAP = 20
+local ASSET_TYPE_ANIMATION = 30
 local ASSET_ID_TO_TYPE_KV = { }
 local DUMMY_CALLBACK
 DUMMY_CALLBACK = function() end
@@ -197,9 +205,8 @@ end
 local GamaTilemap
 do
   local _base_0 = {
-    moveBy = function(self, diff)
-      console.info("[GamaTilemap::moveBy] x:" .. tostring(diff.x) .. ", y:" .. tostring(diff.y))
-      self:setCenterPosition(self.x - diff.x, self.y + diff.y)
+    moveBy = function(self, xdiff, ydiff)
+      return self:setCenterPosition(self.x - xdiff, self.y + ydiff)
     end,
     setCenterPosition = function(self, x, y)
       console.log("[gama::setCenterPosition] x:" .. tostring(x) .. ", y:" .. tostring(y))
@@ -215,6 +222,9 @@ do
       if y > self.maxCenterY then
         y = self.maxCenterY
       end
+      if x == self.x and y == self.y then
+        return 
+      end
       self.x = x
       self.y = y
       self.container:setPosition(HALF_WINDOW_WIDTH - self.x + (self.pixelTileSize / 2), self.y - HALF_WINDOW_HEIGTH)
@@ -229,7 +239,6 @@ do
       self.container:setAnchorPoint(0.5, 0.5)
       self.container:setPosition(0, 0)
       sprite:addChild(self.container)
-      console.warn("[gama::method] @tileCount:" .. tostring(self.tileCount) .. ", tileWidth:" .. tostring(self.tileWidth) .. ", tileHeight:" .. tostring(self.tileHeight))
       local yOffset = WINDOW_HEIGTH - (self.pixelTileSize / 2)
       for tileId = 1, self.tileCount do
         local textureId = math.ceil(tileId / self.numOfTilePerTexture)
@@ -491,6 +500,73 @@ gama.tilemap = {
       end
       local gamaTilemap = GamaTilemap(id, texture2Ds, data.source_width, data.source_height, data.tile_size)
       return callback(nil, gamaTilemap)
+    end)
+  end
+}
+gama.scene = {
+  cleanup = function()
+    SpriteFrameCache:removeUnusedSpriteFrames()
+    TextureCache:removeUnusedTextures()
+  end,
+  loadById = function(id, callback)
+    assert(id, "missing scene id")
+    assert(type(callback) == "function", "invalid callback")
+    print("[gama::scene::loadById] id:" .. tostring(id))
+    return gama.readJSONAsync(id, function(err, sceneData)
+      if err then
+        return gama.scene:emit(EVENT_FAILED, err)
+      end
+      local results = { }
+      table.insert(results, sceneData)
+      local jobs = { }
+      local pushedIds = { }
+      table.insert(jobs, {
+        sceneData.map_id,
+        ASSET_TYPE_TILEMAP
+      })
+      rawset(pushedIds, sceneData.map_id, true)
+      if type(sceneData.ornaments) == "table" then
+        local _list_0 = sceneData.ornaments
+        for _index_0 = 1, #_list_0 do
+          local item = _list_0[_index_0]
+          local assetId = item.id
+          if assetId and pushedIds[assetId] == nil then
+            table.insert(jobs, {
+              assetId,
+              ASSET_TYPE_ANIMATION
+            })
+            rawset(pushedIds, assetId, true)
+          end
+        end
+      end
+      local processor
+      processor = function(job, next)
+        local asserId, jobType = unpack(job)
+        console.info("[gama::on job] assetId:" .. tostring(assetId) .. ", jobType:" .. tostring(jobType))
+        local _exp_0 = jobType
+        if ASSET_TYPE_CHARACTER == _exp_0 then
+          gama.character.getById(asserId, next)
+        elseif ASSET_TYPE_TILEMAP == _exp_0 then
+          gama.tilemap.getById(asserId, next)
+        elseif ASSET_TYPE_ANIMATION == _exp_0 then
+          gama.animation.getById(asserId, function(err, gamaAnimation)
+            if err then
+              console.warn("[gama::scene::load animation] skip invalid animation:" .. tostring(assetId) .. ", error:" .. tostring(err))
+              err = nil
+            end
+            return next(err, gamaAnimation)
+          end)
+        else
+          console.error("[gama::scene::loadById::on job] unknown asset type:" .. tostring(jobType))
+        end
+      end
+      async.mapSeries(jobs, processor, function(err, results)
+        if err then
+          return callback(err)
+        end
+        table.insert(results, 1, sceneData)
+        return callback(nil, results)
+      end)
     end)
   end
 }

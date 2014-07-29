@@ -17,6 +17,16 @@ WINDOW_WIDTH = WIN_SIZE.width
 HALF_WINDOW_HEIGTH = WINDOW_HEIGTH / 2
 HALF_WINDOW_WIDTH = WINDOW_WIDTH / 2
 
+EVENT_START = "start"
+EVENT_PROGRESS = "progress"
+EVENT_WARNING = "warning"
+EVENT_COMPLETE = "complete"
+EVENT_FAILED = "failed"
+
+ASSET_TYPE_CHARACTER = 10
+ASSET_TYPE_TILEMAP = 20
+ASSET_TYPE_ANIMATION = 30
+
 -- key: asset id
 -- value: asset type
 ASSET_ID_TO_TYPE_KV = {}
@@ -202,17 +212,8 @@ class GamaTilemap
     @minCenterX = HALF_WINDOW_WIDTH
     @minCenterY = HALF_WINDOW_HEIGTH
     @maxCenterY = @pixelHeight - HALF_WINDOW_HEIGTH
-    --@minLeftBottomX = WINDOW_WIDTH - @pixelWidth
-    --@maxLeftBottomX = 0
-    --@minLeftBottomY = WINDOW_HEIGTH
-    --@maxLeftBottomY = @pixelHeight
-    --console.warn "[gama::method] @pixelWidth:#{@pixelWidth}, @pixelHeight:#{@pixelHeight}"
-    --console.warn "[gama::method] minLeftBottomX:#{@minLeftBottomX}, maxLeftBottomX:#{@maxLeftBottomX}, minLeftBottomY:#{@minLeftBottomY}, maxLeftBottomY:#{@maxLeftBottomY}"
 
-  moveBy: (diff)=>
-    console.info "[GamaTilemap::moveBy] x:#{diff.x}, y:#{diff.y}"
-    @setCenterPosition(@x - diff.x, @y + diff.y)
-    return
+  moveBy: (xdiff, ydiff)=> @setCenterPosition(@x - xdiff, @y + ydiff)
 
   -- CPU DOM 坐标系
   setCenterPosition: (x, y)=>
@@ -222,6 +223,8 @@ class GamaTilemap
     x = @maxCenterX if x > @maxCenterX
     y = @minCenterY if y < @minCenterY
     y = @maxCenterY if y > @maxCenterY
+
+    return if x == @x and y == @y       -- lazy
 
     @x = x
     @y = y
@@ -241,7 +244,7 @@ class GamaTilemap
     @container\setPosition(0,0)
     sprite\addChild @container
 
-    console.warn "[gama::method] @tileCount:#{@tileCount}, tileWidth:#{@tileWidth}, tileHeight:#{@tileHeight}"
+    --console.warn "[gama::method] @tileCount:#{@tileCount}, tileWidth:#{@tileWidth}, tileHeight:#{@tileHeight}"
 
     yOffset = WINDOW_HEIGTH - (@pixelTileSize / 2)
 
@@ -540,5 +543,87 @@ gama.tilemap =
       return callback nil, gamaTilemap
 
     return
+
+gama.scene =
+
+  --loadedData: nil
+
+  cleanup:  ->
+    SpriteFrameCache\removeUnusedSpriteFrames!
+    TextureCache\removeUnusedTextures!
+    return
+
+  loadById: (id, callback)->
+    assert id, "missing scene id"
+    assert(type(callback) == "function", "invalid callback")
+    print "[gama::scene::loadById] id:#{id}"
+
+    -- 加载场景数据
+    gama.readJSONAsync id, (err, sceneData)->
+      return gama.scene\emit(EVENT_FAILED, err) if err
+
+      results = {}  -- 要返回给回调的场景数据
+      table.insert results, sceneData
+
+      jobs = {}
+      pushedIds = {}
+
+      -- 下载场景
+      table.insert jobs, {sceneData.map_id, ASSET_TYPE_TILEMAP}
+      rawset pushedIds, sceneData.map_id, true
+
+      -- characters
+      --if type(sceneData.characters) == "table"
+        --for characterGroup in *sceneData.characters
+          --if type(characterGroup) == "table"
+          --for item in *characterGroup
+            --assetId = item.id
+            --if assetId and pushedIds[assetId] == nil
+              --temp = {}
+              --temp[assetId] = "character"
+              --table.insert(results, temp)
+              --rawset pushedIds, assetId, true
+
+      -- ornaments
+      if type(sceneData.ornaments) == "table"
+        for item in *sceneData.ornaments
+          assetId = item.id
+          if assetId and pushedIds[assetId] == nil
+            table.insert jobs, {assetId, ASSET_TYPE_ANIMATION}
+            rawset pushedIds, assetId, true
+
+
+      processor = (job, next)->
+        asserId, jobType = unpack job
+        console.info "[gama::on job] assetId:#{assetId}, jobType:#{jobType}"
+
+        switch jobType
+          when ASSET_TYPE_CHARACTER
+            gama.character.getById asserId, next
+
+          when ASSET_TYPE_TILEMAP
+            gama.tilemap.getById asserId, next
+
+          when ASSET_TYPE_ANIMATION
+            --gama.animation.getById asserId, next
+            gama.animation.getById asserId, (err, gamaAnimation)->
+              if err
+                console.warn "[gama::scene::load animation] skip invalid animation:#{assetId}, error:#{err}"
+                err = nil
+              return next err, gamaAnimation
+          else
+            console.error "[gama::scene::loadById::on job] unknown asset type:#{jobType}"
+
+        return
+
+      async.mapSeries jobs, processor, (err, results)->
+        return callback(err) if err
+        table.insert results, 1, sceneData
+        return callback nil, results
+
+      return
+
+
+
 
 
