@@ -30,6 +30,26 @@ TEXTURE_FIELD_ID_2 = "jpg"
 
 SPF = 1 / 15
 
+
+TILE_TEXTURE_RECTS =
+  [1]: cc.rect(0, 0, 256, 256)
+  [2]: cc.rect(256, 0, 256, 256)
+  [3]: cc.rect(512, 0, 256, 256)
+  [4]: cc.rect(768, 0, 256, 256)
+  [5]: cc.rect(0, 256, 256, 256)
+  [6]: cc.rect(256, 256, 256, 256)
+  [7]: cc.rect(512, 256, 256, 256)
+  [8]: cc.rect(768, 256, 256, 256)
+  [9]: cc.rect(0, 512, 256, 256)
+  [10]: cc.rect(256, 512, 256, 256)
+  [11]: cc.rect(512, 512, 256, 256)
+  [12]: cc.rect(768, 512, 256, 256)
+  [13]: cc.rect(0, 768, 256, 256)
+  [14]: cc.rect(256, 768, 256, 256)
+  [15]: cc.rect(512, 768, 256, 256)
+  [16]: cc.rect(768, 768, 256, 256)
+
+
 -- TODO: following conts should goes into gama
 DIRECTION_TO_FLIPX =
   n: false
@@ -177,27 +197,34 @@ class GamaTilemap
 
   bindToSprite: (sprite)=>
     assert sprite, "invalid sprite"
-    sprite\cleanup!
-    @container = sprite
-    @container\setAnchorPoint(0, 1)
+    --sprite\cleanup!
+    sprite\setAnchorPoint(0.5, 0.5)
+    @container = cc.Sprite\create!
+    --@container = sprite
+    @container\setAnchorPoint(0.5, 0.5)
+    sprite\addChild @container
+
+    console.warn "[gama::method] @tileCount:#{@tileCount}, tileWidth:#{@tileWidth}, tileHeight:#{@tileHeight}"
+
 
     for tileId = 1, @tileCount
       textureId = math.ceil(tileId / @numOfTilePerTexture)
       texture = @texture2Ds[textureId]
       sprite = cc.Sprite\createWithTexture texture
       x = (tileId - 1) % @tileWidth * @pixelTileSize
-      y = -(math.floor(tileId / @tileWidth) * @pixelTileSize)
+      y = -(math.floor((tileId - 1) / @tileWidth) * @pixelTileSize)
       sprite\setAnchorPoint(0, 1)
-      console.log "[GamaTilemap::bindToSprite] tileId:#{tileId}, x:#{x}, y:#{y}"
 
-      tileIdInTexture = tileId % @numOfTilePerTexture
-      rectX = tileIdInTexture % @numOfTilePerRow * @pixelTileSize
-      rectY = math.floor(tileIdInTexture / @numOfTilePerRow) * @pixelTileSize
-
-      sprite\setTextureRect(cc.rect(rectX, rectY, @pixelTileSize, @pixelTileSize))
+      tileIdInTexture = tileId - @numOfTilePerTexture * (textureId - 1)
+      console.log "[GamaTilemap::bindToSprite] tileId:#{tileId}, x:#{x}, y:#{y}, textureId:#{textureId}, tileIdInTexture:#{tileIdInTexture}"
+      --sprite\setTextureRect(cc.rect(rectX, rectY, @pixelTileSize, @pixelTileSize))
+      sprite\setTextureRect(TILE_TEXTURE_RECTS[tileIdInTexture])
       sprite\setPosition(x, y)
       @container\addChild sprite
 
+
+    @container\setPosition 50, -400
+    @container\setScale(0.5, 0.5)
     --@container\setPosition(@windowWidth / 2, @windowHeigth / 2)
 
 export gama

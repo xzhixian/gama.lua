@@ -13,6 +13,24 @@ local EMPTY_TABLE = { }
 local TEXTURE_FIELD_ID_1 = "png_8bit"
 local TEXTURE_FIELD_ID_2 = "jpg"
 local SPF = 1 / 15
+local TILE_TEXTURE_RECTS = {
+  [1] = cc.rect(0, 0, 256, 256),
+  [2] = cc.rect(256, 0, 256, 256),
+  [3] = cc.rect(512, 0, 256, 256),
+  [4] = cc.rect(768, 0, 256, 256),
+  [5] = cc.rect(0, 256, 256, 256),
+  [6] = cc.rect(256, 256, 256, 256),
+  [7] = cc.rect(512, 256, 256, 256),
+  [8] = cc.rect(768, 256, 256, 256),
+  [9] = cc.rect(0, 512, 256, 256),
+  [10] = cc.rect(256, 512, 256, 256),
+  [11] = cc.rect(512, 512, 256, 256),
+  [12] = cc.rect(768, 512, 256, 256),
+  [13] = cc.rect(0, 768, 256, 256),
+  [14] = cc.rect(256, 768, 256, 256),
+  [15] = cc.rect(512, 768, 256, 256),
+  [16] = cc.rect(768, 768, 256, 256)
+}
 local DIRECTION_TO_FLIPX = {
   n = false,
   ne = false,
@@ -176,24 +194,26 @@ do
   local _base_0 = {
     bindToSprite = function(self, sprite)
       assert(sprite, "invalid sprite")
-      sprite:cleanup()
-      self.container = sprite
-      self.container:setAnchorPoint(0, 1)
+      sprite:setAnchorPoint(0.5, 0.5)
+      self.container = cc.Sprite:create()
+      self.container:setAnchorPoint(0.5, 0.5)
+      sprite:addChild(self.container)
+      console.warn("[gama::method] @tileCount:" .. tostring(self.tileCount) .. ", tileWidth:" .. tostring(self.tileWidth) .. ", tileHeight:" .. tostring(self.tileHeight))
       for tileId = 1, self.tileCount do
         local textureId = math.ceil(tileId / self.numOfTilePerTexture)
         local texture = self.texture2Ds[textureId]
         sprite = cc.Sprite:createWithTexture(texture)
         local x = (tileId - 1) % self.tileWidth * self.pixelTileSize
-        local y = -(math.floor(tileId / self.tileWidth) * self.pixelTileSize)
+        local y = -(math.floor((tileId - 1) / self.tileWidth) * self.pixelTileSize)
         sprite:setAnchorPoint(0, 1)
-        console.log("[GamaTilemap::bindToSprite] tileId:" .. tostring(tileId) .. ", x:" .. tostring(x) .. ", y:" .. tostring(y))
-        local tileIdInTexture = tileId % self.numOfTilePerTexture
-        local rectX = tileIdInTexture % self.numOfTilePerRow * self.pixelTileSize
-        local rectY = math.floor(tileIdInTexture / self.numOfTilePerRow) * self.pixelTileSize
-        sprite:setTextureRect(cc.rect(rectX, rectY, self.pixelTileSize, self.pixelTileSize))
+        local tileIdInTexture = tileId - self.numOfTilePerTexture * (textureId - 1)
+        console.log("[GamaTilemap::bindToSprite] tileId:" .. tostring(tileId) .. ", x:" .. tostring(x) .. ", y:" .. tostring(y) .. ", textureId:" .. tostring(textureId) .. ", tileIdInTexture:" .. tostring(tileIdInTexture))
+        sprite:setTextureRect(TILE_TEXTURE_RECTS[tileIdInTexture])
         sprite:setPosition(x, y)
         self.container:addChild(sprite)
       end
+      self.container:setPosition(50, -400)
+      return self.container:setScale(0.5, 0.5)
     end
   }
   _base_0.__index = _base_0
