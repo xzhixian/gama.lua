@@ -193,10 +193,11 @@ local GamaTilemap
 do
   local _base_0 = {
     bindToSprite = function(self, sprite)
-      assert(sprite, "invalid sprite")
-      sprite:setAnchorPoint(0.5, 0.5)
+      assert(sprite and type(sprite.addChild) == "function", "invalid sprite")
+      sprite:setAnchorPoint(0, 0)
       self.container = cc.Sprite:create()
       self.container:setAnchorPoint(0.5, 0.5)
+      self.container:setPosition(0, 0)
       sprite:addChild(self.container)
       console.warn("[gama::method] @tileCount:" .. tostring(self.tileCount) .. ", tileWidth:" .. tostring(self.tileWidth) .. ", tileHeight:" .. tostring(self.tileHeight))
       for tileId = 1, self.tileCount do
@@ -212,8 +213,7 @@ do
         sprite:setPosition(x, y)
         self.container:addChild(sprite)
       end
-      self.container:setPosition(50, -400)
-      return self.container:setScale(0.5, 0.5)
+      return self.container:setPosition(0, self.pixelHeight)
     end
   }
   _base_0.__index = _base_0

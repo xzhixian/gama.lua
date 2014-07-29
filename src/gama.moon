@@ -196,12 +196,12 @@ class GamaTilemap
     @windowWidth = winSize.width
 
   bindToSprite: (sprite)=>
-    assert sprite, "invalid sprite"
+    assert sprite and type(sprite.addChild) == "function", "invalid sprite"
     --sprite\cleanup!
-    sprite\setAnchorPoint(0.5, 0.5)
+    sprite\setAnchorPoint(0, 0)
     @container = cc.Sprite\create!
-    --@container = sprite
     @container\setAnchorPoint(0.5, 0.5)
+    @container\setPosition(0,0)
     sprite\addChild @container
 
     console.warn "[gama::method] @tileCount:#{@tileCount}, tileWidth:#{@tileWidth}, tileHeight:#{@tileHeight}"
@@ -222,11 +222,7 @@ class GamaTilemap
       sprite\setPosition(x, y)
       @container\addChild sprite
 
-
-    @container\setPosition 50, -400
-    @container\setScale(0.5, 0.5)
-    --@container\setPosition(@windowWidth / 2, @windowHeigth / 2)
-
+    @container\setPosition(0, @pixelHeight)
 export gama
 
 gama =
