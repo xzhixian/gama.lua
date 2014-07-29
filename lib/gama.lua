@@ -289,6 +289,23 @@ gama = {
   getAssetPath = function(id)
     return tostring(id)
   end,
+  readJSONAsync = function(id, callback)
+    assert(id, "missing id")
+    assert(type(callback) == "function", "invalid callback")
+    local path = tostring(id) .. ".csx"
+    if not (fs:isFileExist(path)) then
+      return callback("file:" .. tostring(path) .. " not found")
+    end
+    local status, content = pcall(fs.getStringFromFile, fs, path)
+    if not (status) then
+      return callback("fail to read file:" .. tostring(path) .. ", error:" .. tostring(content))
+    end
+    status, content = pcall(cjson.decode, content)
+    if not (status) then
+      return callback("fail to decode json from:" .. tostring(path) .. ", error:" .. tostring(content))
+    end
+    return callback(nil, content)
+  end,
   readJSON = function(id)
     local path = tostring(id) .. ".csx"
     print("[gama::readJSON] path:" .. tostring(path))
