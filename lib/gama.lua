@@ -227,7 +227,6 @@ do
       return self:setCenterPosition(self.centerX - xdiff, self.centerY + ydiff)
     end,
     setCenterPosition = function(self, x, y)
-      console.log("[GamaTilemap::setCenterPosition] x:" .. tostring(x) .. ", y:" .. tostring(y))
       if x < self.minCenterX then
         x = self.minCenterX
       end

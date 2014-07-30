@@ -241,7 +241,7 @@ class GamaTilemap
 
   -- CPU DOM 坐标系
   setCenterPosition: (x, y)=>
-    console.log "[GamaTilemap::setCenterPosition] x:#{x}, y:#{y}"
+    --console.log "[GamaTilemap::setCenterPosition] x:#{x}, y:#{y}"
 
     x = @minCenterX if x < @minCenterX
     x = @maxCenterX if x > @maxCenterX
