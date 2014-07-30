@@ -234,7 +234,7 @@ class GamaTilemap
     gamaAnimation\playOnSprite(sprite)
     return
 
-  moveBy: (xdiff, ydiff)=> @setCenterPosition(@centerX - xdiff, @centerY + ydiff)
+  moveBy: (xdiff, ydiff)=> return @setCenterPosition(@centerX - xdiff, @centerY + ydiff)
 
   -- CPU DOM 坐标系
   setCenterPosition: (x, y)=>
@@ -250,7 +250,7 @@ class GamaTilemap
     @centerX = x
     @centerY = y
 
-    @container\setPosition(HALF_WINDOW_WIDTH - @x + (@pixelTileSize / 2) , @y - HALF_WINDOW_HEIGTH)
+    @container\setPosition(HALF_WINDOW_WIDTH - x + (@pixelTileSize / 2) , y - HALF_WINDOW_HEIGTH)
     return x, y
 
   -- 返回显示容器的坐标

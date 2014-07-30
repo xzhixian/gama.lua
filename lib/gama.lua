@@ -245,7 +245,7 @@ do
       end
       self.centerX = x
       self.centerY = y
-      self.container:setPosition(HALF_WINDOW_WIDTH - self.x + (self.pixelTileSize / 2), self.y - HALF_WINDOW_HEIGTH)
+      self.container:setPosition(HALF_WINDOW_WIDTH - x + (self.pixelTileSize / 2), y - HALF_WINDOW_HEIGTH)
       return x, y
     end,
     getContainerPoisition = function(self)
