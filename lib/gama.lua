@@ -224,7 +224,7 @@ do
       gamaAnimation:playOnSprite(sprite)
     end,
     moveBy = function(self, xdiff, ydiff)
-      return self:setCenterPosition(self.x - xdiff, self.y + ydiff)
+      return self:setCenterPosition(self.centerX - xdiff, self.centerY + ydiff)
     end,
     setCenterPosition = function(self, x, y)
       console.log("[gama::setCenterPosition] x:" .. tostring(x) .. ", y:" .. tostring(y))
@@ -240,11 +240,11 @@ do
       if y > self.maxCenterY then
         y = self.maxCenterY
       end
-      if x == self.x and y == self.y then
+      if x == self.centerX and y == self.centerY then
         return 
       end
-      self.x = x
-      self.y = y
+      self.centerX = x
+      self.centerY = y
       self.container:setPosition(HALF_WINDOW_WIDTH - self.x + (self.pixelTileSize / 2), self.y - HALF_WINDOW_HEIGTH)
     end,
     getContainerPoisition = function(self)
