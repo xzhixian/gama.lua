@@ -205,6 +205,24 @@ end
 local GamaTilemap
 do
   local _base_0 = {
+    addOrnament = function(self, gamaAnimation, x, y, flipX)
+      if not (self.container) then
+        print("[GamaTilemap::addOrnament] invalide container")
+        return 
+      end
+      if not (gamaAnimation) then
+        print("[GamaTilemap::addOrnament] invalide gama animation")
+        return 
+      end
+      local yOffset = WINDOW_HEIGTH
+      local xOffset = -self.pixelTileSize / 2
+      local sprite = cc.Sprite:create()
+      sprite:setAnchorPoint(0.5, 0.5)
+      sprite:setFlippedX(not not flipX)
+      sprite:setPosition(tonumber(x) + xOffset, yOffset - tonumber(y))
+      self.container:addChild(sprite)
+      gamaAnimation:playOnSprite(sprite)
+    end,
     moveBy = function(self, xdiff, ydiff)
       return self:setCenterPosition(self.x - xdiff, self.y + ydiff)
     end,
@@ -542,7 +560,6 @@ gama.scene = {
       local processor
       processor = function(job, next)
         local asserId, jobType = unpack(job)
-        console.info("[gama::on job] assetId:" .. tostring(assetId) .. ", jobType:" .. tostring(jobType))
         local _exp_0 = jobType
         if ASSET_TYPE_CHARACTER == _exp_0 then
           gama.character.getById(asserId, next)

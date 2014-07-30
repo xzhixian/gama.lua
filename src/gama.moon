@@ -213,6 +213,27 @@ class GamaTilemap
     @minCenterY = HALF_WINDOW_HEIGTH
     @maxCenterY = @pixelHeight - HALF_WINDOW_HEIGTH
 
+  -- 在场景中添加底层装饰物
+  addOrnament: (gamaAnimation, x, y, flipX)=>
+    unless @container
+      print "[GamaTilemap::addOrnament] invalide container"
+      return
+
+    unless gamaAnimation
+      print "[GamaTilemap::addOrnament] invalide gama animation"
+      return
+
+    yOffset = WINDOW_HEIGTH
+    xOffset = -@pixelTileSize / 2
+
+    sprite = cc.Sprite\create!
+    sprite\setAnchorPoint(0.5, 0.5)
+    sprite\setFlippedX(not not flipX)
+    sprite\setPosition(tonumber(x) + xOffset, yOffset - tonumber(y))
+    @container\addChild sprite
+    gamaAnimation\playOnSprite(sprite)
+    return
+
   moveBy: (xdiff, ydiff)=> @setCenterPosition(@x - xdiff, @y + ydiff)
 
   -- CPU DOM 坐标系
@@ -553,7 +574,10 @@ gama.scene =
     TextureCache\removeUnusedTextures!
     return
 
+  -- callback signature: callback(err, sceneDataPack)
+  --  其中 sceneDataPack 是一个数组，内涵： 1. sceneData, 2. tilemap, ...
   loadById: (id, callback)->
+
     assert id, "missing scene id"
     assert(type(callback) == "function", "invalid callback")
     print "[gama::scene::loadById] id:#{id}"
@@ -592,10 +616,8 @@ gama.scene =
             table.insert jobs, {assetId, ASSET_TYPE_ANIMATION}
             rawset pushedIds, assetId, true
 
-
       processor = (job, next)->
         asserId, jobType = unpack job
-        console.info "[gama::on job] assetId:#{assetId}, jobType:#{jobType}"
 
         switch jobType
           when ASSET_TYPE_CHARACTER
