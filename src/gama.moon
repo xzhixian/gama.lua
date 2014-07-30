@@ -234,7 +234,7 @@ class GamaTilemap
     gamaAnimation\playOnSprite(sprite)
     return
 
-  moveBy: (xdiff, ydiff)=> @setCenterPosition(@x - xdiff, @y + ydiff)
+  moveBy: (xdiff, ydiff)=> @setCenterPosition(@centerX - xdiff, @centerY + ydiff)
 
   -- CPU DOM 坐标系
   setCenterPosition: (x, y)=>
@@ -245,14 +245,15 @@ class GamaTilemap
     y = @minCenterY if y < @minCenterY
     y = @maxCenterY if y > @maxCenterY
 
-    return if x == @x and y == @y       -- lazy
+    return x, y if x == @centerX and y == @centerY       -- lazy
 
-    @x = x
-    @y = y
+    @centerX = x
+    @centerY = y
 
     @container\setPosition(HALF_WINDOW_WIDTH - @x + (@pixelTileSize / 2) , @y - HALF_WINDOW_HEIGTH)
-    return
+    return x, y
 
+  -- 返回显示容器的坐标
   getContainerPoisition: => @container/getPosition!
 
   -- 将地图构建到给定的 sprite 容器
