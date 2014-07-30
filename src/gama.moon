@@ -213,6 +213,9 @@ class GamaTilemap
     @minCenterY = HALF_WINDOW_HEIGTH
     @maxCenterY = @pixelHeight - HALF_WINDOW_HEIGTH
 
+    @centerX = 0
+    @centerY = 0
+
   -- 在场景中添加底层装饰物
   addOrnament: (gamaAnimation, x, y, flipX)=>
     unless @container
@@ -238,7 +241,7 @@ class GamaTilemap
 
   -- CPU DOM 坐标系
   setCenterPosition: (x, y)=>
-    console.log "[gama::setCenterPosition] x:#{x}, y:#{y}"
+    console.log "[GamaTilemap::setCenterPosition] x:#{x}, y:#{y}"
 
     x = @minCenterX if x < @minCenterX
     x = @maxCenterX if x > @maxCenterX
@@ -250,8 +253,12 @@ class GamaTilemap
     @centerX = x
     @centerY = y
 
-    @container\setPosition(HALF_WINDOW_WIDTH - x + (@pixelTileSize / 2) , y - HALF_WINDOW_HEIGTH)
+    --@container\setPosition(HALF_WINDOW_WIDTH - x + (@pixelTileSize / 2) , y - HALF_WINDOW_HEIGTH) if @container
+    @updateContainerPosition!
     return x, y
+
+  updateContainerPosition: =>
+    @container\setPosition(HALF_WINDOW_WIDTH - @centerX + (@pixelTileSize / 2) , @centerY - HALF_WINDOW_HEIGTH) if @container
 
   -- 返回显示容器的坐标
   getContainerPoisition: => @container/getPosition!
@@ -285,7 +292,8 @@ class GamaTilemap
       @container\addChild sprite
 
     --@container\setPosition(0, @pixelHeight)
-    @setCenterPosition(HALF_WINDOW_WIDTH, HALF_WINDOW_HEIGTH)
+    --@setCenterPosition(HALF_WINDOW_WIDTH, HALF_WINDOW_HEIGTH)
+      @updateContainerPosition!
     return
 
 export gama

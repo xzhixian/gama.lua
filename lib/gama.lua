@@ -227,7 +227,7 @@ do
       return self:setCenterPosition(self.centerX - xdiff, self.centerY + ydiff)
     end,
     setCenterPosition = function(self, x, y)
-      console.log("[gama::setCenterPosition] x:" .. tostring(x) .. ", y:" .. tostring(y))
+      console.log("[GamaTilemap::setCenterPosition] x:" .. tostring(x) .. ", y:" .. tostring(y))
       if x < self.minCenterX then
         x = self.minCenterX
       end
@@ -245,8 +245,13 @@ do
       end
       self.centerX = x
       self.centerY = y
-      self.container:setPosition(HALF_WINDOW_WIDTH - x + (self.pixelTileSize / 2), y - HALF_WINDOW_HEIGTH)
+      self:updateContainerPosition()
       return x, y
+    end,
+    updateContainerPosition = function(self)
+      if self.container then
+        return self.container:setPosition(HALF_WINDOW_WIDTH - self.centerX + (self.pixelTileSize / 2), self.centerY - HALF_WINDOW_HEIGTH)
+      end
     end,
     getContainerPoisition = function(self)
       return self.container / getPosition()
@@ -270,8 +275,8 @@ do
         sprite:setTextureRect(TILE_TEXTURE_RECTS[tileIdInTexture])
         sprite:setPosition(x, y)
         self.container:addChild(sprite)
+        self:updateContainerPosition()
       end
-      self:setCenterPosition(HALF_WINDOW_WIDTH, HALF_WINDOW_HEIGTH)
     end
   }
   _base_0.__index = _base_0
@@ -298,6 +303,8 @@ do
       self.minCenterX = HALF_WINDOW_WIDTH
       self.minCenterY = HALF_WINDOW_HEIGTH
       self.maxCenterY = self.pixelHeight - HALF_WINDOW_HEIGTH
+      self.centerX = 0
+      self.centerY = 0
     end,
     __base = _base_0,
     __name = "GamaTilemap"
