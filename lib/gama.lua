@@ -594,6 +594,13 @@ gama.scene = {
         return callback(err)
       end
       table.insert(results, 1, sceneData)
+      for _index_0 = 1, #results do
+        local piece = results[_index_0]
+        local id = piece.id
+        if id then
+          results[tostring(id)] = piece
+        end
+      end
       return callback(nil, results)
     end)
   end

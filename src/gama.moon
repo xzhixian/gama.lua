@@ -661,6 +661,12 @@ gama.scene =
 
       -- 在返回结果的头部插入 sceneData
       table.insert results, 1, sceneData
+
+      -- 在有序数组的结构的同时，在把这个返回结果做成 kv
+      for piece in * results
+        id = piece.id
+        results[tostring(id)] = piece if id
+
       return callback nil, results
 
     return
