@@ -588,73 +588,82 @@ gama.scene =
   loadById: (id, callback)->
 
     assert id, "missing scene id"
+
     assert(type(callback) == "function", "invalid callback")
     print "[gama::scene::loadById] id:#{id}"
 
     -- 加载场景数据
     gama.readJSONAsync id, (err, sceneData)->
-      return gama.scene\emit(EVENT_FAILED, err) if err
+      return callback err if err
+      return gama.scene.getByCSX sceneData, callback
 
-      results = {}  -- 要返回给回调的场景数据
-      table.insert results, sceneData
 
-      jobs = {}
-      pushedIds = {}
+  -- @param {table} data, csx json data
+  loadByCSX: (sceneData, callback)->
 
-      -- 下载场景
-      table.insert jobs, {sceneData.map_id, ASSET_TYPE_TILEMAP}
-      rawset pushedIds, sceneData.map_id, true
+    assert sceneData and sceneData.type == "scenes", "invalid data type"
+    assert type(callback) == "function", "invalid callback"
 
-      -- characters
-      --if type(sceneData.characters) == "table"
-        --for characterGroup in *sceneData.characters
-          --if type(characterGroup) == "table"
-          --for item in *characterGroup
-            --assetId = item.id
-            --if assetId and pushedIds[assetId] == nil
-              --temp = {}
-              --temp[assetId] = "character"
-              --table.insert(results, temp)
-              --rawset pushedIds, assetId, true
+    print "[gama::scene::loadByCSX]"
 
-      -- ornaments
-      if type(sceneData.ornaments) == "table"
-        for item in *sceneData.ornaments
-          assetId = item.id
-          if assetId and pushedIds[assetId] == nil
-            table.insert jobs, {assetId, ASSET_TYPE_ANIMATION}
-            rawset pushedIds, assetId, true
+    jobs = {}
+    pushedIds = {}
 
-      processor = (job, next)->
-        asserId, jobType = unpack job
+    -- 下载场景
+    -- 下载任务的第一个步 是 下载场景地图
+    table.insert jobs, {sceneData.map_id, ASSET_TYPE_TILEMAP}
+    rawset pushedIds, sceneData.map_id, true
 
-        switch jobType
-          when ASSET_TYPE_CHARACTER
-            gama.character.getById asserId, next
+    -- characters
+    --if type(sceneData.characters) == "table"
+      --for characterGroup in *sceneData.characters
+        --if type(characterGroup) == "table"
+        --for item in *characterGroup
+          --assetId = item.id
+          --if assetId and pushedIds[assetId] == nil
+            --temp = {}
+            --temp[assetId] = "character"
+            --table.insert(results, temp)
+            --rawset pushedIds, assetId, true
 
-          when ASSET_TYPE_TILEMAP
-            gama.tilemap.getById asserId, next
+    -- ornaments
+    if type(sceneData.ornaments) == "table"
+      for item in *sceneData.ornaments
+        assetId = item.id
+        if assetId and pushedIds[assetId] == nil
+          table.insert jobs, {assetId, ASSET_TYPE_ANIMATION}
+          rawset pushedIds, assetId, true
 
-          when ASSET_TYPE_ANIMATION
-            --gama.animation.getById asserId, next
-            gama.animation.getById asserId, (err, gamaAnimation)->
-              if err
-                console.warn "[gama::scene::load animation] skip invalid animation:#{assetId}, error:#{err}"
-                err = nil
-              return next err, gamaAnimation
-          else
-            console.error "[gama::scene::loadById::on job] unknown asset type:#{jobType}"
+    processor = (job, next)->
+      asserId, jobType = unpack job
 
-        return
+      switch jobType
+        when ASSET_TYPE_CHARACTER
+          gama.character.getById asserId, next
 
-      async.mapSeries jobs, processor, (err, results)->
-        return callback(err) if err
-        table.insert results, 1, sceneData
-        return callback nil, results
+        when ASSET_TYPE_TILEMAP
+          gama.tilemap.getById asserId, next
+
+        when ASSET_TYPE_ANIMATION
+          --gama.animation.getById asserId, next
+          gama.animation.getById asserId, (err, gamaAnimation)->
+            if err
+              console.warn "[gama::scene::load animation] skip invalid animation:#{assetId}, error:#{err}"
+              err = nil
+            return next err, gamaAnimation
+        else
+          console.error "[gama::scene::loadById::on job] unknown asset type:#{jobType}"
 
       return
 
+    async.mapSeries jobs, processor, (err, results)->
+      return callback(err) if err
 
+      -- 在返回结果的头部插入 sceneData
+      table.insert results, 1, sceneData
+      return callback nil, results
+
+    return
 
 
 

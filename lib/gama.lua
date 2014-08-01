@@ -539,58 +539,62 @@ gama.scene = {
     print("[gama::scene::loadById] id:" .. tostring(id))
     return gama.readJSONAsync(id, function(err, sceneData)
       if err then
-        return gama.scene:emit(EVENT_FAILED, err)
+        return callback(err)
       end
-      local results = { }
-      table.insert(results, sceneData)
-      local jobs = { }
-      local pushedIds = { }
-      table.insert(jobs, {
-        sceneData.map_id,
-        ASSET_TYPE_TILEMAP
-      })
-      rawset(pushedIds, sceneData.map_id, true)
-      if type(sceneData.ornaments) == "table" then
-        local _list_0 = sceneData.ornaments
-        for _index_0 = 1, #_list_0 do
-          local item = _list_0[_index_0]
-          local assetId = item.id
-          if assetId and pushedIds[assetId] == nil then
-            table.insert(jobs, {
-              assetId,
-              ASSET_TYPE_ANIMATION
-            })
-            rawset(pushedIds, assetId, true)
+      return gama.scene.getByCSX(sceneData, callback)
+    end)
+  end,
+  loadByCSX = function(sceneData, callback)
+    assert(sceneData and sceneData.type == "scenes", "invalid data type")
+    assert(type(callback) == "function", "invalid callback")
+    print("[gama::scene::loadByCSX]")
+    local jobs = { }
+    local pushedIds = { }
+    table.insert(jobs, {
+      sceneData.map_id,
+      ASSET_TYPE_TILEMAP
+    })
+    rawset(pushedIds, sceneData.map_id, true)
+    if type(sceneData.ornaments) == "table" then
+      local _list_0 = sceneData.ornaments
+      for _index_0 = 1, #_list_0 do
+        local item = _list_0[_index_0]
+        local assetId = item.id
+        if assetId and pushedIds[assetId] == nil then
+          table.insert(jobs, {
+            assetId,
+            ASSET_TYPE_ANIMATION
+          })
+          rawset(pushedIds, assetId, true)
+        end
+      end
+    end
+    local processor
+    processor = function(job, next)
+      local asserId, jobType = unpack(job)
+      local _exp_0 = jobType
+      if ASSET_TYPE_CHARACTER == _exp_0 then
+        gama.character.getById(asserId, next)
+      elseif ASSET_TYPE_TILEMAP == _exp_0 then
+        gama.tilemap.getById(asserId, next)
+      elseif ASSET_TYPE_ANIMATION == _exp_0 then
+        gama.animation.getById(asserId, function(err, gamaAnimation)
+          if err then
+            console.warn("[gama::scene::load animation] skip invalid animation:" .. tostring(assetId) .. ", error:" .. tostring(err))
+            err = nil
           end
-        end
+          return next(err, gamaAnimation)
+        end)
+      else
+        console.error("[gama::scene::loadById::on job] unknown asset type:" .. tostring(jobType))
       end
-      local processor
-      processor = function(job, next)
-        local asserId, jobType = unpack(job)
-        local _exp_0 = jobType
-        if ASSET_TYPE_CHARACTER == _exp_0 then
-          gama.character.getById(asserId, next)
-        elseif ASSET_TYPE_TILEMAP == _exp_0 then
-          gama.tilemap.getById(asserId, next)
-        elseif ASSET_TYPE_ANIMATION == _exp_0 then
-          gama.animation.getById(asserId, function(err, gamaAnimation)
-            if err then
-              console.warn("[gama::scene::load animation] skip invalid animation:" .. tostring(assetId) .. ", error:" .. tostring(err))
-              err = nil
-            end
-            return next(err, gamaAnimation)
-          end)
-        else
-          console.error("[gama::scene::loadById::on job] unknown asset type:" .. tostring(jobType))
-        end
+    end
+    async.mapSeries(jobs, processor, function(err, results)
+      if err then
+        return callback(err)
       end
-      async.mapSeries(jobs, processor, function(err, results)
-        if err then
-          return callback(err)
-        end
-        table.insert(results, 1, sceneData)
-        return callback(nil, results)
-      end)
+      table.insert(results, 1, sceneData)
+      return callback(nil, results)
     end)
   end
 }
