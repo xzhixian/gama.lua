@@ -6,6 +6,12 @@ local TextureCache = cc.Director:getInstance():getTextureCache()
 local AnimationCache = cc.AnimationCache:getInstance()
 local fs = cc.FileUtils:getInstance()
 fs:addSearchPath("gama/")
+local fromhex
+fromhex = function(str)
+  return str:gsub('..', (function(cc)
+    return string.char(tonumber(cc, 16))
+  end))
+end
 local WIN_SIZE = cc.Director:getInstance():getWinSize()
 local WINDOW_HEIGTH = WIN_SIZE.height
 local WINDOW_WIDTH = WIN_SIZE.width
@@ -252,6 +258,9 @@ do
         return self.container:setPosition(HALF_WINDOW_WIDTH - self.centerX + (self.pixelTileSize / 2), self.centerY - HALF_WINDOW_HEIGTH)
       end
     end,
+    uiCordToVertexCord = function(self, x, y)
+      return x - self.halfPixelTileSize, y + WINDOW_HEIGTH
+    end,
     getContainerPoisition = function(self)
       return self.container / getPosition()
     end,
@@ -293,6 +302,7 @@ do
       self.pixelWidth = pixelWidth
       self.pixelHeight = pixelHeight
       self.pixelTileSize = pixelTileSize
+      self.halfPixelTileSize = pixelTileSize / 2
       self.tileWidth = math.ceil(pixelWidth / pixelTileSize)
       self.tileHeight = math.ceil(pixelHeight / pixelTileSize)
       self.tileCount = self.tileWidth * self.tileHeight
@@ -550,6 +560,15 @@ gama.scene = {
     print("[gama::scene::loadByCSX]")
     local jobs = { }
     local pushedIds = { }
+    sceneData.binaryBlock = fromhex(sceneData.mask_binary[1])
+    sceneData.binaryMask = fromhex(sceneData.mask_binary[2])
+    sceneData.mask_binary = nil
+    sceneData.isWalkableAt = function(self, brickX, brickY)
+      return true
+    end
+    sceneData.isMaskedAt = function(self, brickX, brickY)
+      return true
+    end
     table.insert(jobs, {
       sceneData.map_id,
       ASSET_TYPE_TILEMAP

@@ -11,6 +11,9 @@ AnimationCache = cc.AnimationCache\getInstance!
 fs = cc.FileUtils\getInstance!
 fs\addSearchPath "gama/"
 
+-- convert hex string to binary string
+fromhex = (str)-> return str\gsub('..', ((cc)-> return string.char(tonumber(cc, 16))))
+
 WIN_SIZE = cc.Director\getInstance!\getWinSize!
 WINDOW_HEIGTH = WIN_SIZE.height
 WINDOW_WIDTH = WIN_SIZE.width
@@ -202,6 +205,7 @@ class GamaTilemap
     @pixelWidth = pixelWidth
     @pixelHeight = pixelHeight
     @pixelTileSize = pixelTileSize
+    @halfPixelTileSize = pixelTileSize / 2
     @tileWidth = math.ceil(pixelWidth / pixelTileSize)
     @tileHeight = math.ceil(pixelHeight / pixelTileSize)
     @tileCount = @tileWidth * @tileHeight
@@ -215,6 +219,8 @@ class GamaTilemap
 
     @centerX = 0
     @centerY = 0
+
+
 
   -- 在场景中添加底层装饰物
   addOrnament: (gamaAnimation, x, y, flipX)=>
@@ -259,6 +265,10 @@ class GamaTilemap
 
   updateContainerPosition: =>
     @container\setPosition(HALF_WINDOW_WIDTH - @centerX + (@pixelTileSize / 2) , @centerY - HALF_WINDOW_HEIGTH) if @container
+
+  -- 将 UI 的目标 X,Y 转换为GPU渲染时候的 X, Y
+  uiCordToVertexCord: (x, y)=>
+    return x - @halfPixelTileSize, y + WINDOW_HEIGTH
 
   -- 返回显示容器的坐标
   getContainerPoisition: => @container/getPosition!
@@ -608,6 +618,17 @@ gama.scene =
 
     jobs = {}
     pushedIds = {}
+
+    -- 将阻挡点和隐身点数据转换成 binary
+    sceneData.binaryBlock = fromhex(sceneData.mask_binary[1])
+    sceneData.binaryMask = fromhex(sceneData.mask_binary[2])
+    sceneData.mask_binary = nil
+
+    sceneData.isWalkableAt = (brickX, brickY)=>
+      return true
+
+    sceneData.isMaskedAt = (brickX, brickY)=>
+      return true
 
     -- 下载场景
     -- 下载任务的第一个步 是 下载场景地图
