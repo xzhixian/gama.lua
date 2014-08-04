@@ -639,7 +639,10 @@ gama.scene =
     sceneData.binaryBlock = fromhex(sceneData.mask_binary[1])
     sceneData.binaryMask = fromhex(sceneData.mask_binary[2])
 
-    sceneData.isWalkableAt = (brickX, brickY)=>
+    sceneData.isWalkableAt = (pixelX, pixelY)=>
+      @isWalkableAtBrick(math.floor(pixelX / @brickUnitWidth), math.floor(pixelY / @brickUnitHeight))
+
+    sceneData.isWalkableAtBrick = (brickX, brickY)=>
       brickN = (brickY * @brickWidth) + brickX -- brickX, brickY are 0-based
       bytePos = math.floor(brickN / 32) + 1
       byte = sceneData.binaryBlock[bytePos]

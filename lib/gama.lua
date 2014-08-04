@@ -566,7 +566,10 @@ gama.scene = {
     local pushedIds = { }
     sceneData.binaryBlock = fromhex(sceneData.mask_binary[1])
     sceneData.binaryMask = fromhex(sceneData.mask_binary[2])
-    sceneData.isWalkableAt = function(self, brickX, brickY)
+    sceneData.isWalkableAt = function(self, pixelX, pixelY)
+      return self:isWalkableAtBrick(math.floor(pixelX / self.brickUnitWidth), math.floor(pixelY / self.brickUnitHeight))
+    end
+    sceneData.isWalkableAtBrick = function(self, brickX, brickY)
       local brickN = (brickY * self.brickWidth) + brickX
       local bytePos = math.floor(brickN / 32) + 1
       local byte = sceneData.binaryBlock[bytePos]
