@@ -111,19 +111,48 @@ do
     getMotions = function(self)
       return self.motions
     end,
+    findAnimation = function(self, motionName, direction, fallbackToDefaultMotion)
+      local animationName = tostring(self.id) .. "/" .. tostring(motionName) .. "/" .. tostring(direction)
+      local animation = AnimationCache:getAnimation(animationName)
+      if animation then
+        return animation
+      end
+      animation = AnimationCache:getAnimation(tostring(self.id) .. "/" .. tostring(motionName) .. "/" .. tostring(self.defaultDirection))
+      if animation then
+        return animation
+      end
+      if not (fallbackToDefaultMotion) then
+        return 
+      end
+      print("[GamaFigure(" .. tostring(self.id) .. ")::findAnimation] missing animation for motionName:" .. tostring(motionName) .. ", direction:" .. tostring(direction) .. ", use defaults")
+      animation = AnimationCache:getAnimation(tostring(self.id) .. "/" .. tostring(self.defaultMotion) .. "/" .. tostring(self.defaultDirection))
+      if animation then
+        return animation
+      end
+      print("[GamaFigure(" .. tostring(self.id) .. ")::findAnimation] no default animation")
+      return nil
+    end,
+    playOnceOnSprite = function(self, sprite, motionName, direction)
+      print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] sprite:" .. tostring(sprite) .. ", motionName:" .. tostring(motionName) .. ", direction:" .. tostring(direction))
+      assert(sprite, "invalid sprite")
+      local animation = self:findAnimation(motionName, direction)
+      if not (animation) then
+        print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] fail to find animation")
+        return 
+      end
+      sprite:cleanup()
+      local animate = cc.Animate:create(animation)
+      sprite:runAction(animate)
+    end,
     playOnSprite = function(self, sprite, motionName, direction)
       print("[GamaFigure::playOnSprite] sprite:" .. tostring(sprite) .. ", motionName:" .. tostring(motionName) .. ", direction:" .. tostring(direction))
       assert(sprite, "invalid sprite")
-      local animationName = tostring(self.id) .. "/" .. tostring(motionName) .. "/" .. tostring(direction or self.defaultDirection)
-      local animation = AnimationCache:getAnimation(animationName)
+      local animation = self:findAnimation(motionName, direction, true)
       if not (animation) then
-        print("[GamaFigure(" .. tostring(playOnSprite) .. ")::playOnSprite] missing animation for motionName:" .. tostring(motionName) .. ", direction:" .. tostring(direction) .. ", use defaults")
-        animation = AnimationCache:getAnimation(tostring(self.id) .. "/" .. tostring(self.defaultMotion) .. "/" .. tostring(self.defaultDirection))
-        if not (animation) then
-          print("[GamaFigure(" .. tostring(playOnSprite) .. ")::playOnSprite] no default animation")
-          return 
-        end
+        print("[GamaFigure(" .. tostring(self.id) .. ")::playOnSprite] fail to find animation")
+        return 
       end
+      console.info("[gama::playOnSprite] animation:" .. tostring(animation))
       sprite:cleanup()
       local animate = cc.Animate:create(animation)
       local action = cc.RepeatForever:create(animate)
@@ -577,6 +606,9 @@ gama.scene = {
       return (bitValue % 2) == 1
     end
     sceneData.isMaskedAt = function(self, brickX, brickY)
+      return self:isMaskedAtBrick(math.floor(pixelX / self.brickUnitWidth), math.floor(pixelY / self.brickUnitHeight))
+    end
+    sceneData.isMaskedAtBrick = function(self, brickX, brickY)
       local brickN = (brickY * self.brickWidth) + brickX
       local bytePos = math.floor(brickN / 32) + 1
       local byte = sceneData.binaryMask[bytePos]

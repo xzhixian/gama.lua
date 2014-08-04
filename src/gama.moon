@@ -135,20 +135,61 @@ class GamaFigure
 
   getMotions: => @motions
 
+  -- 根据动作名字和方向 找到对应的动画
+  -- @param motionName
+  -- @param direction
+  -- @param fallbackToDefaultMotion, when true 会切换到默认动作
+  findAnimation: (motionName, direction, fallbackToDefaultMotion)=>
+    animationName = "#{@id}/#{motionName}/#{direction}"
+    animation = AnimationCache\getAnimation animationName   -- 先到缓存里面找
+    return animation if animation
+
+    -- 尝试找当前动作下的默认方向
+    animation = AnimationCache\getAnimation "#{@id}/#{motionName}/#{@defaultDirection}"
+    return animation if animation
+
+    return unless fallbackToDefaultMotion
+
+    print "[GamaFigure(#{@id})::findAnimation] missing animation for motionName:#{motionName}, direction:#{direction}, use defaults"
+    animation = AnimationCache\getAnimation "#{@id}/#{@defaultMotion}/#{@defaultDirection}"
+    return animation if animation
+
+    print "[GamaFigure(#{@id})::findAnimation] no default animation"
+    return nil
+
+  -- play this animation on the given sprite
+  -- @param sprite  cc.Sprite
+  playOnceOnSprite: (sprite, motionName, direction)=>
+    print "[GamaFigure(#{@id})::playOnceOnSprite] sprite:#{sprite}, motionName:#{motionName}, direction:#{direction}"
+
+    assert sprite, "invalid sprite"
+
+    animation = @findAnimation motionName, direction
+
+    unless animation
+      print "[GamaFigure(#{@id})::playOnceOnSprite] fail to find animation"
+      return
+
+    sprite\cleanup!
+    animate = cc.Animate\create animation
+    --action = cc.RepeatForever\create(animate)
+    sprite\runAction(animate)
+    return
+
   -- play this animation on the given sprite
   -- @param sprite  cc.Sprite
   playOnSprite: (sprite, motionName, direction)=>
     print "[GamaFigure::playOnSprite] sprite:#{sprite}, motionName:#{motionName}, direction:#{direction}"
 
     assert sprite, "invalid sprite"
-    animationName = "#{@id}/#{motionName}/#{direction or @defaultDirection}"
-    animation = AnimationCache\getAnimation animationName   -- 先到缓存里面找
+
+    animation = @findAnimation motionName, direction, true
+
     unless animation
-      print "[GamaFigure(#{playOnSprite})::playOnSprite] missing animation for motionName:#{motionName}, direction:#{direction}, use defaults"
-      animation = AnimationCache\getAnimation "#{@id}/#{@defaultMotion}/#{@defaultDirection}"
-      unless animation
-        print "[GamaFigure(#{playOnSprite})::playOnSprite] no default animation"
-        return
+      print "[GamaFigure(#{@id})::playOnSprite] fail to find animation"
+      return
+
+    console.info "[gama::playOnSprite] animation:#{animation}"
 
     sprite\cleanup!
     animate = cc.Animate\create animation
@@ -650,6 +691,9 @@ gama.scene =
       return (bitValue % 2) == 1
 
     sceneData.isMaskedAt = (brickX, brickY)=>
+      @isMaskedAtBrick(math.floor(pixelX / @brickUnitWidth), math.floor(pixelY / @brickUnitHeight))
+
+    sceneData.isMaskedAtBrick = (brickX, brickY)=>
       brickN = (brickY * @brickWidth) + brickX -- brickX, brickY are 0-based
       bytePos = math.floor(brickN / 32) + 1
       byte = sceneData.binaryMask[bytePos]
