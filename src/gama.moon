@@ -306,6 +306,16 @@ class GamaTilemap
       @updateContainerPosition!
     return
 
+--class GamaScene
+
+  --new: (id, sceneData, gamaTilemap)=>
+    --assert id, "missing id"
+    --assert sceneData, "invalid scene data"
+    --assert gamaTilemap.__class == "GamaTilemap", "invalid gama tilemap"
+
+    --@sceneData = sceneData
+    --@tilemap = gamaTilemap
+
 export gama
 
 gama =
@@ -605,7 +615,7 @@ gama.scene =
     -- 加载场景数据
     gama.readJSONAsync id, (err, sceneData)->
       return callback err if err
-      return gama.scene.getByCSX sceneData, callback
+      return gama.scene.loadByCSX sceneData, callback
 
 
   -- @param {table} data, csx json data
@@ -625,7 +635,11 @@ gama.scene =
     sceneData.mask_binary = nil
 
     sceneData.isWalkableAt = (brickX, brickY)=>
-      return true
+      brickN = (brickY * @brickWidth) + (brickX + 1) -- brickX is 0-based
+      byte = sceneData.binaryBlock\byte(math.ceil(brickN / 8))
+      bitValue = bit.rshift(byte, brickN % 8)
+      console.log "[gama::isMaskedAt] brickX:#{brickX}, brickY:#{brickY}, brickN:#{brickN}, byte:#{byte}, bitValue:#{bitValue}"
+      return (bitValue % 2) == 1
 
     sceneData.isMaskedAt = (brickX, brickY)=>
       return true
@@ -680,6 +694,8 @@ gama.scene =
     async.mapSeries jobs, processor, (err, results)->
       return callback(err) if err
 
+      gamaTilemap = results[1]
+
       -- 在返回结果的头部插入 sceneData
       table.insert results, 1, sceneData
 
@@ -687,6 +703,17 @@ gama.scene =
       for piece in * results
         id = piece.id
         results[tostring(id)] = piece if id
+
+      -- 将 tilemap 中的长宽数据补充到 sceneData 中
+      sceneData.pixelWidth = gamaTilemap.pixelWidth
+      sceneData.pixelHeight = gamaTilemap.pixelHeight
+      sceneData.brickUnitWidth = sceneData.brick_width
+      sceneData.brickUnitHeight = sceneData.brick_height
+      sceneData.brickWidth = math.floor(gamaTilemap.pixelWidth / sceneData.brick_width)
+      sceneData.brickHeight = math.floor(gamaTilemap.pixelHeight / sceneData.brick_height)
+
+      --console.info "[gama::] gamaTilemap:#{gamaTilemap}"
+      --console.info "[gama::] brickUnitWidth:#{sceneData.brickUnitWidth}, brickUnitHeight:#{sceneData.brickUnitHeight}, brickWidth:#{sceneData.brickWidth}, brickHeight:#{sceneData.brickHeight}"
 
       return callback nil, results
 

@@ -551,7 +551,7 @@ gama.scene = {
       if err then
         return callback(err)
       end
-      return gama.scene.getByCSX(sceneData, callback)
+      return gama.scene.loadByCSX(sceneData, callback)
     end)
   end,
   loadByCSX = function(sceneData, callback)
@@ -564,7 +564,11 @@ gama.scene = {
     sceneData.binaryMask = fromhex(sceneData.mask_binary[2])
     sceneData.mask_binary = nil
     sceneData.isWalkableAt = function(self, brickX, brickY)
-      return true
+      local brickN = (brickY * self.brickWidth) + (brickX + 1)
+      local byte = sceneData.binaryBlock:byte(math.ceil(brickN / 8))
+      local bitValue = bit.rshift(byte, brickN % 8)
+      console.log("[gama::isMaskedAt] brickX:" .. tostring(brickX) .. ", brickY:" .. tostring(brickY) .. ", brickN:" .. tostring(brickN) .. ", byte:" .. tostring(byte) .. ", bitValue:" .. tostring(bitValue))
+      return (bitValue % 2) == 1
     end
     sceneData.isMaskedAt = function(self, brickX, brickY)
       return true
@@ -612,6 +616,7 @@ gama.scene = {
       if err then
         return callback(err)
       end
+      local gamaTilemap = results[1]
       table.insert(results, 1, sceneData)
       for _index_0 = 1, #results do
         local piece = results[_index_0]
@@ -620,6 +625,12 @@ gama.scene = {
           results[tostring(id)] = piece
         end
       end
+      sceneData.pixelWidth = gamaTilemap.pixelWidth
+      sceneData.pixelHeight = gamaTilemap.pixelHeight
+      sceneData.brickUnitWidth = sceneData.brick_width
+      sceneData.brickUnitHeight = sceneData.brick_height
+      sceneData.brickWidth = math.floor(gamaTilemap.pixelWidth / sceneData.brick_width)
+      sceneData.brickHeight = math.floor(gamaTilemap.pixelHeight / sceneData.brick_height)
       return callback(nil, results)
     end)
   end
