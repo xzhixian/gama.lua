@@ -11,8 +11,14 @@ AnimationCache = cc.AnimationCache\getInstance!
 fs = cc.FileUtils\getInstance!
 fs\addSearchPath "gama/"
 
--- convert hex string to binary string
-fromhex = (str)-> return str\gsub('..', ((cc)-> return string.char(tonumber(cc, 16))))
+-- 将 hex 字符串转化为 UINT32 数组table
+fromhex = (str)->
+  result = {}
+  n = #str
+  for i = 1, n, 8
+    cc = str\sub(i, i+ 7)
+    table.insert result, tonumber(cc, 16)
+  return result
 
 WIN_SIZE = cc.Director\getInstance!\getWinSize!
 WINDOW_HEIGTH = WIN_SIZE.height
@@ -632,17 +638,20 @@ gama.scene =
     -- 将阻挡点和隐身点数据转换成 binary
     sceneData.binaryBlock = fromhex(sceneData.mask_binary[1])
     sceneData.binaryMask = fromhex(sceneData.mask_binary[2])
-    sceneData.mask_binary = nil
 
     sceneData.isWalkableAt = (brickX, brickY)=>
-      brickN = (brickY * @brickWidth) + (brickX + 1) -- brickX is 0-based
-      byte = sceneData.binaryBlock\byte(math.ceil(brickN / 8))
-      bitValue = bit.rshift(byte, brickN % 8)
-      console.log "[gama::isMaskedAt] brickX:#{brickX}, brickY:#{brickY}, brickN:#{brickN}, byte:#{byte}, bitValue:#{bitValue}"
+      brickN = (brickY * @brickWidth) + brickX -- brickX, brickY are 0-based
+      bytePos = math.floor(brickN / 32) + 1
+      byte = sceneData.binaryBlock[bytePos]
+      bitValue = bit.rshift(byte, brickN % 32)
       return (bitValue % 2) == 1
 
     sceneData.isMaskedAt = (brickX, brickY)=>
-      return true
+      brickN = (brickY * @brickWidth) + brickX -- brickX, brickY are 0-based
+      bytePos = math.floor(brickN / 32) + 1
+      byte = sceneData.binaryMask[bytePos]
+      bitValue = bit.rshift(byte, brickN % 32)
+      return (bitValue % 2) == 0
 
     -- 下载场景
     -- 下载任务的第一个步 是 下载场景地图

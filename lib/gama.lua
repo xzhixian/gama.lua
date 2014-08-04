@@ -8,9 +8,13 @@ local fs = cc.FileUtils:getInstance()
 fs:addSearchPath("gama/")
 local fromhex
 fromhex = function(str)
-  return str:gsub('..', (function(cc)
-    return string.char(tonumber(cc, 16))
-  end))
+  local result = { }
+  local n = #str
+  for i = 1, n, 8 do
+    local cc = str:sub(i, i + 7)
+    table.insert(result, tonumber(cc, 16))
+  end
+  return result
 end
 local WIN_SIZE = cc.Director:getInstance():getWinSize()
 local WINDOW_HEIGTH = WIN_SIZE.height
@@ -562,16 +566,19 @@ gama.scene = {
     local pushedIds = { }
     sceneData.binaryBlock = fromhex(sceneData.mask_binary[1])
     sceneData.binaryMask = fromhex(sceneData.mask_binary[2])
-    sceneData.mask_binary = nil
     sceneData.isWalkableAt = function(self, brickX, brickY)
-      local brickN = (brickY * self.brickWidth) + (brickX + 1)
-      local byte = sceneData.binaryBlock:byte(math.ceil(brickN / 8))
-      local bitValue = bit.rshift(byte, brickN % 8)
-      console.log("[gama::isMaskedAt] brickX:" .. tostring(brickX) .. ", brickY:" .. tostring(brickY) .. ", brickN:" .. tostring(brickN) .. ", byte:" .. tostring(byte) .. ", bitValue:" .. tostring(bitValue))
+      local brickN = (brickY * self.brickWidth) + brickX
+      local bytePos = math.floor(brickN / 32) + 1
+      local byte = sceneData.binaryBlock[bytePos]
+      local bitValue = bit.rshift(byte, brickN % 32)
       return (bitValue % 2) == 1
     end
     sceneData.isMaskedAt = function(self, brickX, brickY)
-      return true
+      local brickN = (brickY * self.brickWidth) + brickX
+      local bytePos = math.floor(brickN / 32) + 1
+      local byte = sceneData.binaryMask[bytePos]
+      local bitValue = bit.rshift(byte, brickN % 32)
+      return (bitValue % 2) == 0
     end
     table.insert(jobs, {
       sceneData.map_id,
