@@ -141,9 +141,6 @@ do
       if not (sprite and type(sprite.getScene) == "function") then
         return print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] invalid sprit")
       end
-      if sprite:getScene() == nil then
-        return print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] ignore sprite is not belong to scene")
-      end
       local animation = self:findAnimation(motionName, direction)
       if not (animation) then
         print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] fail to find animation")
@@ -156,13 +153,13 @@ do
         end
         return 
       end
-      sprite:cleanup()
+      if sprite:getScene() then
+        sprite:cleanup()
+      end
       local animate = cc.Animate:create(animation)
       sprite:runAction(animate)
       if type(callback) == "function" then
-        local duration = animation:getDuration()
-        console.info("[gama::playOnceOnSprite] duration:" .. tostring(duration))
-        performWithDelay(sprite, callback, duration)
+        performWithDelay(sprite, callback, animation:getDuration())
       end
     end,
     playOnSprite = function(self, sprite, motionName, direction)
@@ -170,16 +167,15 @@ do
       if not (sprite and type(sprite.getScene) == "function") then
         return print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] invalid sprit")
       end
-      if sprite:getScene() == nil then
-        return print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] ignore sprite is not belong to scene")
-      end
       local animation = self:findAnimation(motionName, direction, true)
       if not (animation) then
         print("[GamaFigure(" .. tostring(self.id) .. ")::playOnSprite] fail to find animation")
         return 
       end
       console.info("[gama::playOnSprite] animation:" .. tostring(animation))
-      sprite:cleanup()
+      if sprite:getScene() then
+        sprite:cleanup()
+      end
       local animate = cc.Animate:create(animation)
       local action = cc.RepeatForever:create(animate)
       sprite:runAction(action)

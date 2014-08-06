@@ -165,8 +165,6 @@ class GamaFigure
 
     return print "[GamaFigure(#{@id})::playOnceOnSprite] invalid sprit" unless sprite and type(sprite.getScene) == "function"
 
-    return print "[GamaFigure(#{@id})::playOnceOnSprite] ignore sprite is not belong to scene" if sprite\getScene! == nil
-
     animation = @findAnimation motionName, direction
 
     unless animation
@@ -179,14 +177,11 @@ class GamaFigure
       callback! if type(callback) == "function"
       return
 
-    sprite\cleanup!
+    sprite\cleanup! if sprite\getScene!
     animate = cc.Animate\create animation
     sprite\runAction(animate)
 
-    if type(callback) == "function"
-      duration = animation\getDuration!
-      console.info "[gama::playOnceOnSprite] duration:#{duration}"
-      performWithDelay sprite, callback, duration
+    performWithDelay(sprite, callback, animation\getDuration!) if type(callback) == "function"
     return
 
   -- play this animation on the given sprite
@@ -196,8 +191,6 @@ class GamaFigure
 
     return print "[GamaFigure(#{@id})::playOnceOnSprite] invalid sprit" unless sprite and type(sprite.getScene) == "function"
 
-    return print "[GamaFigure(#{@id})::playOnceOnSprite] ignore sprite is not belong to scene" if sprite\getScene! == nil
-
     animation = @findAnimation motionName, direction, true
 
     unless animation
@@ -206,7 +199,7 @@ class GamaFigure
 
     console.info "[gama::playOnSprite] animation:#{animation}"
 
-    sprite\cleanup!
+    sprite\cleanup! if sprite\getScene!
     animate = cc.Animate\create animation
     action = cc.RepeatForever\create(animate)
     sprite\runAction(action)
