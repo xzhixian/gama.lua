@@ -189,6 +189,17 @@ end
 local GamaCharacter
 do
   local _base_0 = {
+    addContinouseMotionId = function(self, ...)
+      local names = {
+        ...
+      }
+      for _index_0 = 1, #names do
+        local name = names[_index_0]
+        self.continouseMotionIds[name] = true
+      end
+      console.info("[gama::] continouseMotionIds:")
+      console.dir(self.continouseMotionIds)
+    end,
     getId = function(self)
       return self.id
     end,
@@ -200,7 +211,11 @@ do
     end,
     applyChange = function(self)
       self.sprite:setFlippedX(DIRECTION_TO_FLIPX[self.curDirection])
-      return self.figure:playOnSprite(self.sprite, self.curMotion, self.curDirection)
+      if self.continouseMotionIds[self.curMotion] then
+        self.figure:playOnSprite(self.sprite, self.curMotion, self.curDirection)
+        return 
+      end
+      return self.figure:playOnceOnSprite(self.sprite, self.curMotion, self.curDirection)
     end,
     setDirection = function(self, value)
       if self.curDirection == value then
@@ -224,6 +239,9 @@ do
       self.figure = gamaFigure
       self.motions = gamaFigure.getMotions
       self.sprite = sprite
+      self.continouseMotionIds = {
+        idl = true
+      }
       self.curDirection = "s"
       self.curMotion = "idl"
       return self:applyChange()

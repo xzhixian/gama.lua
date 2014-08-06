@@ -172,7 +172,6 @@ class GamaFigure
 
     sprite\cleanup!
     animate = cc.Animate\create animation
-    --action = cc.RepeatForever\create(animate)
     sprite\runAction(animate)
     return
 
@@ -207,9 +206,24 @@ class GamaCharacter
     @motions = gamaFigure.getMotions
     @sprite = sprite
 
+    -- 连续性动作的 motion id 列表
+    @continouseMotionIds =
+      idl: true
+
     @curDirection = "s"
     @curMotion = "idl"
     @applyChange!
+
+  -- 添加连续性动作的id
+  addContinouseMotionId: (...)=>
+    names = {...}
+    for name in *names
+      @continouseMotionIds[name] = true
+
+    console.info "[gama::] continouseMotionIds:"
+    console.dir @continouseMotionIds
+
+    return
 
   getId: => @id
 
@@ -219,7 +233,12 @@ class GamaCharacter
 
   applyChange: =>
     @sprite\setFlippedX(DIRECTION_TO_FLIPX[@curDirection])
-    @figure\playOnSprite @sprite, @curMotion, @curDirection
+
+    if @continouseMotionIds[@curMotion]
+      @figure\playOnSprite @sprite, @curMotion, @curDirection
+      return
+
+    @figure\playOnceOnSprite @sprite, @curMotion, @curDirection
 
   setDirection: (value)=>
     return if @curDirection == value  --lazy
