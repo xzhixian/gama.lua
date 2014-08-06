@@ -68,8 +68,12 @@ local GamaAnimation
 do
   local _base_0 = {
     playOnSprite = function(self, sprite)
-      assert(sprite, "invalid sprite")
-      sprite:cleanup()
+      if not (sprite and type(sprite.getScene) == "function") then
+        return print("[GamaAnimation(" .. tostring(self.id) .. ")::playOnSprite] invalid sprit")
+      end
+      if sprite:getScene() then
+        sprite:cleanup()
+      end
       local animate = cc.Animate:create(self.ccAnimation)
       local action = cc.RepeatForever:create(animate)
       sprite:runAction(action)

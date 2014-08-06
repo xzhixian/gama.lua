@@ -101,8 +101,9 @@ class GamaAnimation
   -- play this animation on the given sprite
   -- @param sprite  cc.Sprite
   playOnSprite: (sprite)=>
-    assert sprite, "invalid sprite"
-    sprite\cleanup!
+    return print "[GamaAnimation(#{@id})::playOnSprite] invalid sprit" unless sprite and type(sprite.getScene) == "function"
+
+    sprite\cleanup! if sprite\getScene!
     animate = cc.Animate\create @ccAnimation
     action = cc.RepeatForever\create(animate)
     sprite\runAction(action)
