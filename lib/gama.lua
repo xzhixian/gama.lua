@@ -132,21 +132,43 @@ do
       print("[GamaFigure(" .. tostring(self.id) .. ")::findAnimation] no default animation")
       return nil
     end,
-    playOnceOnSprite = function(self, sprite, motionName, direction)
+    playOnceOnSprite = function(self, sprite, motionName, direction, callback)
       print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] sprite:" .. tostring(sprite) .. ", motionName:" .. tostring(motionName) .. ", direction:" .. tostring(direction))
-      assert(sprite, "invalid sprite")
+      if not (sprite and type(sprite.getScene) == "function") then
+        return print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] invalid sprit")
+      end
+      if sprite:getScene() == nil then
+        return print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] ignore sprite is not belong to scene")
+      end
       local animation = self:findAnimation(motionName, direction)
       if not (animation) then
         print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] fail to find animation")
         return 
       end
+      if table.getn(animation:getFrames()) == 0 then
+        print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] animation contain 0 frames")
+        if type(callback) == "function" then
+          callback()
+        end
+        return 
+      end
       sprite:cleanup()
       local animate = cc.Animate:create(animation)
       sprite:runAction(animate)
+      if type(callback) == "function" then
+        local duration = animation:getDuration()
+        console.info("[gama::playOnceOnSprite] duration:" .. tostring(duration))
+        performWithDelay(sprite, callback, duration)
+      end
     end,
     playOnSprite = function(self, sprite, motionName, direction)
       print("[GamaFigure::playOnSprite] sprite:" .. tostring(sprite) .. ", motionName:" .. tostring(motionName) .. ", direction:" .. tostring(direction))
-      assert(sprite, "invalid sprite")
+      if not (sprite and type(sprite.getScene) == "function") then
+        return print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] invalid sprit")
+      end
+      if sprite:getScene() == nil then
+        return print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] ignore sprite is not belong to scene")
+      end
       local animation = self:findAnimation(motionName, direction, true)
       if not (animation) then
         print("[GamaFigure(" .. tostring(self.id) .. ")::playOnSprite] fail to find animation")
@@ -185,79 +207,6 @@ do
   })
   _base_0.__class = _class_0
   GamaFigure = _class_0
-end
-local GamaCharacter
-do
-  local _base_0 = {
-    addContinouseMotionId = function(self, ...)
-      local names = {
-        ...
-      }
-      for _index_0 = 1, #names do
-        local name = names[_index_0]
-        self.continouseMotionIds[name] = true
-      end
-      console.info("[gama::] continouseMotionIds:")
-      console.dir(self.continouseMotionIds)
-    end,
-    getId = function(self)
-      return self.id
-    end,
-    getCurDirection = function(self)
-      return self.curDirection
-    end,
-    getCurMotion = function(self)
-      return self.getCurMotion
-    end,
-    applyChange = function(self)
-      self.sprite:setFlippedX(DIRECTION_TO_FLIPX[self.curDirection])
-      if self.continouseMotionIds[self.curMotion] then
-        self.figure:playOnSprite(self.sprite, self.curMotion, self.curDirection)
-        return 
-      end
-      return self.figure:playOnceOnSprite(self.sprite, self.curMotion, self.curDirection)
-    end,
-    setDirection = function(self, value)
-      if self.curDirection == value then
-        return 
-      end
-      self.curDirection = value
-      self:applyChange()
-    end,
-    setMotion = function(self, value)
-      if self.curMotion == value then
-        return 
-      end
-      self.curMotion = value
-      self:applyChange()
-    end
-  }
-  _base_0.__index = _base_0
-  local _class_0 = setmetatable({
-    __init = function(self, id, gamaFigure, sprite)
-      self.id = id
-      self.figure = gamaFigure
-      self.motions = gamaFigure.getMotions
-      self.sprite = sprite
-      self.continouseMotionIds = {
-        idl = true
-      }
-      self.curDirection = "s"
-      self.curMotion = "idl"
-      return self:applyChange()
-    end,
-    __base = _base_0,
-    __name = "GamaCharacter"
-  }, {
-    __index = _base_0,
-    __call = function(cls, ...)
-      local _self_0 = setmetatable({}, _base_0)
-      cls.__init(_self_0, ...)
-      return _self_0
-    end
-  })
-  _base_0.__class = _class_0
-  GamaCharacter = _class_0
 end
 local GamaTilemap
 do
@@ -424,12 +373,6 @@ gama = {
     ASSET_ID_TO_TYPE_KV[id] = type
     print("[gama::getTypeById] type:" .. tostring(type))
     return type
-  end,
-  createCharacterWithSprite = function(id, gamaFigure, sprite)
-    assert(id)
-    assert(gamaFigure)
-    assert(sprite)
-    return GamaCharacter(id, gamaFigure, sprite)
   end
 }
 gama.texture2D = {

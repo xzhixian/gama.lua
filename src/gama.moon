@@ -159,10 +159,12 @@ class GamaFigure
 
   -- play this animation on the given sprite
   -- @param sprite  cc.Sprite
-  playOnceOnSprite: (sprite, motionName, direction)=>
+  playOnceOnSprite: (sprite, motionName, direction, callback)=>
     print "[GamaFigure(#{@id})::playOnceOnSprite] sprite:#{sprite}, motionName:#{motionName}, direction:#{direction}"
 
-    assert sprite, "invalid sprite"
+    return print "[GamaFigure(#{@id})::playOnceOnSprite] invalid sprit" unless sprite and type(sprite.getScene) == "function"
+
+    return print "[GamaFigure(#{@id})::playOnceOnSprite] ignore sprite is not belong to scene" if sprite\getScene! == nil
 
     animation = @findAnimation motionName, direction
 
@@ -170,9 +172,20 @@ class GamaFigure
       print "[GamaFigure(#{@id})::playOnceOnSprite] fail to find animation"
       return
 
+    -- 过滤 空动画
+    if table.getn(animation\getFrames!) == 0
+      print "[GamaFigure(#{@id})::playOnceOnSprite] animation contain 0 frames"
+      callback! if type(callback) == "function"
+      return
+
     sprite\cleanup!
     animate = cc.Animate\create animation
     sprite\runAction(animate)
+
+    if type(callback) == "function"
+      duration = animation\getDuration!
+      console.info "[gama::playOnceOnSprite] duration:#{duration}"
+      performWithDelay sprite, callback, duration
     return
 
   -- play this animation on the given sprite
@@ -180,7 +193,9 @@ class GamaFigure
   playOnSprite: (sprite, motionName, direction)=>
     print "[GamaFigure::playOnSprite] sprite:#{sprite}, motionName:#{motionName}, direction:#{direction}"
 
-    assert sprite, "invalid sprite"
+    return print "[GamaFigure(#{@id})::playOnceOnSprite] invalid sprit" unless sprite and type(sprite.getScene) == "function"
+
+    return print "[GamaFigure(#{@id})::playOnceOnSprite] ignore sprite is not belong to scene" if sprite\getScene! == nil
 
     animation = @findAnimation motionName, direction, true
 
@@ -198,59 +213,59 @@ class GamaFigure
 
 
 -- 人物
-class GamaCharacter
+--class GamaCharacter
 
-  new: (id, gamaFigure, sprite)=>
-    @id = id
-    @figure = gamaFigure
-    @motions = gamaFigure.getMotions
-    @sprite = sprite
+  --new: (id, gamaFigure, sprite)=>
+    --@id = id
+    --@figure = gamaFigure
+    --@motions = gamaFigure.getMotions
+    --@sprite = sprite
 
-    -- 连续性动作的 motion id 列表
-    @continouseMotionIds =
-      idl: true
+    ---- 连续性动作的 motion id 列表
+    --@continouseMotionIds =
+      --idl: true
 
-    @curDirection = "s"
-    @curMotion = "idl"
-    @applyChange!
+    --@curDirection = "s"
+    --@curMotion = "idl"
+    --@applyChange!
 
-  -- 添加连续性动作的id
-  addContinouseMotionId: (...)=>
-    names = {...}
-    for name in *names
-      @continouseMotionIds[name] = true
+  ---- 添加连续性动作的id
+  --addContinouseMotionId: (...)=>
+    --names = {...}
+    --for name in *names
+      --@continouseMotionIds[name] = true
 
-    console.info "[gama::] continouseMotionIds:"
-    console.dir @continouseMotionIds
+    --console.info "[gama::] continouseMotionIds:"
+    --console.dir @continouseMotionIds
 
-    return
+    --return
 
-  getId: => @id
+  --getId: => @id
 
-  getCurDirection: => @curDirection
+  --getCurDirection: => @curDirection
 
-  getCurMotion: => @getCurMotion
+  --getCurMotion: => @getCurMotion
 
-  applyChange: =>
-    @sprite\setFlippedX(DIRECTION_TO_FLIPX[@curDirection])
+  --applyChange: =>
+    --@sprite\setFlippedX(DIRECTION_TO_FLIPX[@curDirection])
 
-    if @continouseMotionIds[@curMotion]
-      @figure\playOnSprite @sprite, @curMotion, @curDirection
-      return
+    --if @continouseMotionIds[@curMotion]
+      --@figure\playOnSprite @sprite, @curMotion, @curDirection
+      --return
 
-    @figure\playOnceOnSprite @sprite, @curMotion, @curDirection
+    --@figure\playOnceOnSprite @sprite, @curMotion, @curDirection
 
-  setDirection: (value)=>
-    return if @curDirection == value  --lazy
-    @curDirection = value
-    @applyChange!
-    return
+  --setDirection: (value)=>
+    --return if @curDirection == value  --lazy
+    --@curDirection = value
+    --@applyChange!
+    --return
 
-  setMotion: (value)=>
-    return if @curMotion == value   --lazy
-    @curMotion = value
-    @applyChange!
-    return
+  --setMotion: (value)=>
+    --return if @curMotion == value   --lazy
+    --@curMotion = value
+    --@applyChange!
+    --return
 
 
 class GamaTilemap
@@ -437,11 +452,11 @@ gama =
     return type
 
   -- 创建一个 GamaFigure 实例，并且将这个实例绑定到用于显示其的 Sprite 上
-  createCharacterWithSprite: (id, gamaFigure, sprite)->
-    assert id
-    assert gamaFigure
-    assert sprite
-    return GamaCharacter(id, gamaFigure, sprite)
+  --createCharacterWithSprite: (id, gamaFigure, sprite)->
+    --assert id
+    --assert gamaFigure
+    --assert sprite
+    --return GamaCharacter(id, gamaFigure, sprite)
 
 -- 管理和处理 texture2D
 gama.texture2D =
