@@ -581,6 +581,25 @@ gama.scene = {
       ASSET_TYPE_TILEMAP
     })
     rawset(pushedIds, sceneData.map_id, true)
+    if type(sceneData.characters) == "table" then
+      local _list_0 = sceneData.characters
+      for _index_0 = 1, #_list_0 do
+        local characterGroup = _list_0[_index_0]
+        if type(characterGroup) == "table" then
+          for _index_1 = 1, #characterGroup do
+            local character = characterGroup[_index_1]
+            if type(character.id) == "string" and pushedIds[character.id] ~= true then
+              console.error("[gama::push character] id:" .. tostring(character.id))
+              table.insert(jobs, {
+                character.id,
+                ASSET_TYPE_CHARACTER
+              })
+              rawset(pushedIds, character.id, true)
+            end
+          end
+        end
+      end
+    end
     if type(sceneData.ornaments) == "table" then
       local _list_0 = sceneData.ornaments
       for _index_0 = 1, #_list_0 do

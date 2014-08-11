@@ -734,16 +734,14 @@ gama.scene =
     rawset pushedIds, sceneData.map_id, true
 
     -- characters
-    --if type(sceneData.characters) == "table"
-      --for characterGroup in *sceneData.characters
-        --if type(characterGroup) == "table"
-        --for item in *characterGroup
-          --assetId = item.id
-          --if assetId and pushedIds[assetId] == nil
-            --temp = {}
-            --temp[assetId] = "character"
-            --table.insert(results, temp)
-            --rawset pushedIds, assetId, true
+    if type(sceneData.characters) == "table"
+      for characterGroup in *sceneData.characters
+        if type(characterGroup) == "table"
+          for character in *characterGroup
+            if type(character.id) == "string" and pushedIds[character.id] != true
+              console.error "[gama::push character] id:#{character.id}"
+              table.insert jobs, {character.id, ASSET_TYPE_CHARACTER}
+              rawset pushedIds, character.id, true
 
     -- ornaments
     if type(sceneData.ornaments) == "table"
