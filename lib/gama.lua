@@ -233,6 +233,7 @@ do
       return self:setCenterPosition(self.centerX - xdiff, self.centerY + ydiff)
     end,
     setCenterPosition = function(self, x, y)
+      assert(type(x) == "number" and type(y) == "number", "invalid x:" .. tostring(x) .. ", y:" .. tostring(y))
       if x < self.minCenterX then
         x = self.minCenterX
       end

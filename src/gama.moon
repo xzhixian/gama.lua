@@ -322,6 +322,7 @@ class GamaTilemap
   -- CPU DOM 坐标系
   setCenterPosition: (x, y)=>
     --console.log "[GamaTilemap::setCenterPosition] x:#{x}, y:#{y}"
+    assert type(x) == "number" and type(y) == "number", "invalid x:#{x}, y:#{y}"
 
     x = @minCenterX if x < @minCenterX
     x = @maxCenterX if x > @maxCenterX
