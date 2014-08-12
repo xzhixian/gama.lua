@@ -469,6 +469,18 @@ gama.figure = {
     print("[gama::tilemap::getById] id:" .. tostring(id))
     gama.figure.getByCSX(gama.readJSON(id), callback)
   end,
+  getByCharacterId = function(id, callback)
+    assert(type(callback) == "function", "invalid callback")
+    return gama.readJSONAsync(id, function(err, data)
+      if err then
+        return callback(err)
+      end
+      if not (data and data.type == "characters" and type(data.figure) == "table") then
+        return callback("invalid character data for id:" .. tostring(id))
+      end
+      gama.figure.getByCSX(data.figure, callback)
+    end)
+  end,
   getByCSX = function(data, callback)
     callback = callback or DUMMY_CALLBACK
     assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
@@ -619,7 +631,7 @@ gama.scene = {
       local asserId, jobType = unpack(job)
       local _exp_0 = jobType
       if ASSET_TYPE_CHARACTER == _exp_0 then
-        gama.character.getById(asserId, next)
+        gama.figure.getByCharacterId(asserId, next)
       elseif ASSET_TYPE_TILEMAP == _exp_0 then
         gama.tilemap.getById(asserId, next)
       elseif ASSET_TYPE_ANIMATION == _exp_0 then
