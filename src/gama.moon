@@ -588,6 +588,14 @@ gama.figure =
     gama.figure.getByCSX(gama.readJSON(id), callback)
     return
 
+  -- 根据 character id 来获取 figure
+  getByCharacterId:  (id, callback)->
+    assert type(callback) == "function", "invalid callback"
+    gama.readJSONAsync id, (err, data)->
+      return callback err if err
+      return callback "invalid character data for id:#{id}" unless data and data.type == "characters" and type(data.figure) == "table"
+      gama.figure.getByCSX(data.figure, callback)
+      return
 
   -- @param {table} data, csx json data
   getByCSX: (data, callback)->
@@ -733,16 +741,14 @@ gama.scene =
     rawset pushedIds, sceneData.map_id, true
 
     -- characters
-    --if type(sceneData.characters) == "table"
-      --for characterGroup in *sceneData.characters
-        --if type(characterGroup) == "table"
-        --for item in *characterGroup
-          --assetId = item.id
-          --if assetId and pushedIds[assetId] == nil
-            --temp = {}
-            --temp[assetId] = "character"
-            --table.insert(results, temp)
-            --rawset pushedIds, assetId, true
+    if type(sceneData.characters) == "table"
+      for characterGroup in *sceneData.characters
+        if type(characterGroup) == "table"
+          for character in *characterGroup
+            if type(character.id) == "string" and pushedIds[character.id] != true
+              --console.error "[gama::push character] id:#{character.id}"
+              table.insert jobs, {character.id, ASSET_TYPE_CHARACTER}
+              rawset pushedIds, character.id, true
 
     -- ornaments
     if type(sceneData.ornaments) == "table"
@@ -757,7 +763,7 @@ gama.scene =
 
       switch jobType
         when ASSET_TYPE_CHARACTER
-          gama.character.getById asserId, next
+          gama.figure.getByCharacterId asserId, next
 
         when ASSET_TYPE_TILEMAP
           gama.tilemap.getById asserId, next
