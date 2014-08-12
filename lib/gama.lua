@@ -601,7 +601,6 @@ gama.scene = {
           for _index_1 = 1, #characterGroup do
             local character = characterGroup[_index_1]
             if type(character.id) == "string" and pushedIds[character.id] ~= true then
-              console.error("[gama::push character] id:" .. tostring(character.id))
               table.insert(jobs, {
                 character.id,
                 ASSET_TYPE_CHARACTER

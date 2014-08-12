@@ -747,7 +747,7 @@ gama.scene =
         if type(characterGroup) == "table"
           for character in *characterGroup
             if type(character.id) == "string" and pushedIds[character.id] != true
-              console.error "[gama::push character] id:#{character.id}"
+              --console.error "[gama::push character] id:#{character.id}"
               table.insert jobs, {character.id, ASSET_TYPE_CHARACTER}
               rawset pushedIds, character.id, true
 
