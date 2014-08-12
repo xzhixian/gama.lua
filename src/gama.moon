@@ -53,8 +53,7 @@ EMPTY_TABLE = {}
 TEXTURE_FIELD_ID_1 = "png_8bit"
 TEXTURE_FIELD_ID_2 = "jpg"
 
-SPF = 1 / 15
-
+SPF = 1 / 20
 
 TILE_TEXTURE_RECTS =
   [1]: cc.rect(0, 0, 256, 256)
