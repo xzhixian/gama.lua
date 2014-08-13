@@ -319,7 +319,8 @@ class GamaTilemap
 
   moveBy: (xdiff, ydiff)=> return @setCenterPosition(@centerX - xdiff, @centerY + ydiff)
 
-  -- CPU DOM 坐标系
+  -- 设置场景在屏幕上的中心点，基于CPU DOM 坐标系
+  -- @return 有效设置后的x， 有效设置后的y， 是否改动了设置前的中心点
   setCenterPosition: (x, y)=>
     --console.log "[GamaTilemap::setCenterPosition] x:#{x}, y:#{y}"
     assert type(x) == "number" and type(y) == "number", "invalid x:#{x}, y:#{y}"
@@ -329,14 +330,14 @@ class GamaTilemap
     y = @minCenterY if y < @minCenterY
     y = @maxCenterY if y > @maxCenterY
 
-    return x, y if x == @centerX and y == @centerY       -- lazy
+    return x, y, false if x == @centerX and y == @centerY       -- lazy
 
     @centerX = x
     @centerY = y
 
     --@container\setPosition(HALF_WINDOW_WIDTH - x + (@pixelTileSize / 2) , y - HALF_WINDOW_HEIGTH) if @container
     @updateContainerPosition!
-    return x, y
+    return x, y, true
 
   updateContainerPosition: =>
     @container\setPosition(HALF_WINDOW_WIDTH - @centerX + (@pixelTileSize / 2) , @centerY - HALF_WINDOW_HEIGTH) if @container
@@ -595,6 +596,8 @@ gama.figure =
     gama.readJSONAsync id, (err, data)->
       return callback err if err
       return callback "invalid character data for id:#{id}" unless data and data.type == "characters" and type(data.figure) == "table"
+      -- NOTE: 将所请求的 figure 的 id 重置为 character 的 id
+      data.figure.id = id
       gama.figure.getByCSX(data.figure, callback)
       return
 

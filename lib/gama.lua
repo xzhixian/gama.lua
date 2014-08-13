@@ -244,12 +244,12 @@ do
         y = self.maxCenterY
       end
       if x == self.centerX and y == self.centerY then
-        return x, y
+        return x, y, false
       end
       self.centerX = x
       self.centerY = y
       self:updateContainerPosition()
-      return x, y
+      return x, y, true
     end,
     updateContainerPosition = function(self)
       if self.container then
@@ -476,6 +476,7 @@ gama.figure = {
       if not (data and data.type == "characters" and type(data.figure) == "table") then
         return callback("invalid character data for id:" .. tostring(id))
       end
+      data.figure.id = id
       gama.figure.getByCSX(data.figure, callback)
     end)
   end,
