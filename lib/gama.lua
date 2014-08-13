@@ -137,7 +137,6 @@ do
       return nil
     end,
     playOnceOnSprite = function(self, sprite, motionName, direction, callback)
-      print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] sprite:" .. tostring(sprite) .. ", motionName:" .. tostring(motionName) .. ", direction:" .. tostring(direction))
       if not (sprite and type(sprite.getScene) == "function") then
         return print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] invalid sprit")
       end
@@ -163,7 +162,6 @@ do
       end
     end,
     playOnSprite = function(self, sprite, motionName, direction)
-      print("[GamaFigure::playOnSprite] sprite:" .. tostring(sprite) .. ", motionName:" .. tostring(motionName) .. ", direction:" .. tostring(direction))
       if not (sprite and type(sprite.getScene) == "function") then
         return print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] invalid sprit")
       end
@@ -172,7 +170,6 @@ do
         print("[GamaFigure(" .. tostring(self.id) .. ")::playOnSprite] fail to find animation")
         return 
       end
-      console.info("[gama::playOnSprite] animation:" .. tostring(animation))
       if sprite:getScene() then
         sprite:cleanup()
       end

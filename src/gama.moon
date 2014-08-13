@@ -160,7 +160,7 @@ class GamaFigure
   -- play this animation on the given sprite
   -- @param sprite  cc.Sprite
   playOnceOnSprite: (sprite, motionName, direction, callback)=>
-    print "[GamaFigure(#{@id})::playOnceOnSprite] sprite:#{sprite}, motionName:#{motionName}, direction:#{direction}"
+    --print "[GamaFigure(#{@id})::playOnceOnSprite] sprite:#{sprite}, motionName:#{motionName}, direction:#{direction}"
 
     return print "[GamaFigure(#{@id})::playOnceOnSprite] invalid sprit" unless sprite and type(sprite.getScene) == "function"
 
@@ -186,7 +186,7 @@ class GamaFigure
   -- play this animation on the given sprite
   -- @param sprite  cc.Sprite
   playOnSprite: (sprite, motionName, direction)=>
-    print "[GamaFigure::playOnSprite] sprite:#{sprite}, motionName:#{motionName}, direction:#{direction}"
+    --print "[GamaFigure::playOnSprite] sprite:#{sprite}, motionName:#{motionName}, direction:#{direction}"
 
     return print "[GamaFigure(#{@id})::playOnceOnSprite] invalid sprit" unless sprite and type(sprite.getScene) == "function"
 
@@ -196,7 +196,7 @@ class GamaFigure
       print "[GamaFigure(#{@id})::playOnSprite] fail to find animation"
       return
 
-    console.info "[gama::playOnSprite] animation:#{animation}"
+    --console.info "[gama::playOnSprite] animation:#{animation}"
 
     sprite\cleanup! if sprite\getScene!
     animate = cc.Animate\create animation
