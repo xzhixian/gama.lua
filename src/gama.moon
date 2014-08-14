@@ -36,15 +36,7 @@ ASSET_TYPE_CHARACTER = 10
 ASSET_TYPE_TILEMAP = 20
 ASSET_TYPE_ANIMATION = 30
 
--- key: asset id
--- value: asset type
 ASSET_ID_TO_TYPE_KV = {}
-
--- key: asset id
--- value:
---    texture :
---    action :
---ASSET_ID_TO_ANIMATION_KV = {}
 
 DUMMY_CALLBACK = ->
 
@@ -52,6 +44,9 @@ EMPTY_TABLE = {}
 
 TEXTURE_FIELD_ID_1 = "png_8bit"
 TEXTURE_FIELD_ID_2 = "jpg"
+
+-- 在 sprite 上播放内容的 action
+TAG_PLAYFRAME_ACTION = 65535
 
 SPF = 1 / 20
 
@@ -102,9 +97,11 @@ class GamaAnimation
   playOnSprite: (sprite)=>
     return print "[GamaAnimation(#{@id})::playOnSprite] invalid sprit" unless sprite and type(sprite.getScene) == "function"
 
-    sprite\cleanup! if sprite\getScene!
+    --sprite\cleanup! if sprite\getScene!
+    sprite\stopActionByTag TAG_PLAYFRAME_ACTION
     animate = cc.Animate\create @ccAnimation
     action = cc.RepeatForever\create(animate)
+    action\setTag TAG_PLAYFRAME_ACTION
     sprite\runAction(action)
     return
 
@@ -176,8 +173,10 @@ class GamaFigure
       callback! if type(callback) == "function"
       return
 
-    sprite\cleanup! if sprite\getScene!
+    --sprite\cleanup! if sprite\getScene!
+    sprite\stopActionByTag TAG_PLAYFRAME_ACTION
     animate = cc.Animate\create animation
+    animate\setTag TAG_PLAYFRAME_ACTION
     sprite\runAction(animate)
 
     performWithDelay(sprite, callback, animation\getDuration!) if type(callback) == "function"
@@ -198,9 +197,11 @@ class GamaFigure
 
     --console.info "[gama::playOnSprite] animation:#{animation}"
 
-    sprite\cleanup! if sprite\getScene!
+    --sprite\cleanup! if sprite\getScene!
+    sprite\stopActionByTag TAG_PLAYFRAME_ACTION
     animate = cc.Animate\create animation
     action = cc.RepeatForever\create(animate)
+    action\setTag TAG_PLAYFRAME_ACTION
     sprite\runAction(action)
     return
 

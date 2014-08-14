@@ -35,6 +35,7 @@ DUMMY_CALLBACK = function() end
 local EMPTY_TABLE = { }
 local TEXTURE_FIELD_ID_1 = "png_8bit"
 local TEXTURE_FIELD_ID_2 = "jpg"
+local TAG_PLAYFRAME_ACTION = 65535
 local SPF = 1 / 20
 local TILE_TEXTURE_RECTS = {
   [1] = cc.rect(0, 0, 256, 256),
@@ -71,11 +72,10 @@ do
       if not (sprite and type(sprite.getScene) == "function") then
         return print("[GamaAnimation(" .. tostring(self.id) .. ")::playOnSprite] invalid sprit")
       end
-      if sprite:getScene() then
-        sprite:cleanup()
-      end
+      sprite:stopActionByTag(TAG_PLAYFRAME_ACTION)
       local animate = cc.Animate:create(self.ccAnimation)
       local action = cc.RepeatForever:create(animate)
+      action:setTag(TAG_PLAYFRAME_ACTION)
       sprite:runAction(action)
     end
   }
@@ -152,10 +152,9 @@ do
         end
         return 
       end
-      if sprite:getScene() then
-        sprite:cleanup()
-      end
+      sprite:stopActionByTag(TAG_PLAYFRAME_ACTION)
       local animate = cc.Animate:create(animation)
+      animate:setTag(TAG_PLAYFRAME_ACTION)
       sprite:runAction(animate)
       if type(callback) == "function" then
         performWithDelay(sprite, callback, animation:getDuration())
@@ -170,11 +169,10 @@ do
         print("[GamaFigure(" .. tostring(self.id) .. ")::playOnSprite] fail to find animation")
         return 
       end
-      if sprite:getScene() then
-        sprite:cleanup()
-      end
+      sprite:stopActionByTag(TAG_PLAYFRAME_ACTION)
       local animate = cc.Animate:create(animation)
       local action = cc.RepeatForever:create(animate)
+      action:setTag(TAG_PLAYFRAME_ACTION)
       sprite:runAction(action)
     end
   }
