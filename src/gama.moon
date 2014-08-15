@@ -393,6 +393,26 @@ class GamaTilemap
     --@sceneData = sceneData
     --@tilemap = gamaTilemap
 
+
+class GamaIconPack
+
+  new: (@id, @keys, assetFrames)=>
+    assert type(id) == "string", "invalid id"
+    assert type(keys) == "table" and #keys > 0, "invalid keys"
+    assert type(assetFrames) == "table", "invalid assetFrames"
+    @icons = {}
+    for key in *@keys
+      frameKey = "#{@id}/#{key}"
+      @icons[key] = assetFrames[frameKey] if assetFrames[frameKey]
+    return
+
+  drawOnSprite: (sprite, key)=>
+    assert sprite, "invalid sprite:#{sprite}"
+    icon = @icons[tostring(key)]
+    return print "[GamaIconPack(#{@id})::drawOnSprite] missing icon for #{key}" unless icon
+    sprite\setSpriteFrame icon
+    return
+
 export gama
 
 gama =
@@ -531,7 +551,7 @@ gama.texture2D =
 
         frame = cc.SpriteFrame\createWithTexture(texture, rect)
         frame\setOriginalSizeInPixels(cc.size(512, 512))
-        frame\setOffset(cc.p(frameInfo.ox, frameInfo.oy))
+        frame\setOffset(cc.p(frameInfo.ox, frameInfo.oy)) if frameInfo.ox and frameInfo.oy
         -- push the frame into cache
         SpriteFrameCache\addSpriteFrame frame, frameName
 
@@ -812,6 +832,51 @@ gama.scene =
       return callback nil, results
 
     return
+
+
+gama.iconpack =
+
+  -- callback signature: callback(err, gamaIconPack)
+  loadById: (id, callback)->
+
+    assert id, "invalid id"
+
+    assert(type(callback) == "function", "invalid callback")
+
+    print "[gama::iconpack::loadById] id:#{id}"
+
+    -- 加载场景数据
+    gama.readJSONAsync id, (err, data)->
+      return callback err if err
+      return gama.iconpack.loadByCSX data, callback
+
+    return
+
+  -- @param {table} data, csx json data
+  loadByCSX: (csxData, callback)->
+    print "[gama::iconpack::loadByCSX]"
+
+    assert type(callback) == "function", "invalid callback"
+
+    return callback "invalid csx json data" unless csxData and csxData.type == "iconpacks"
+
+    id = csxData.id
+
+    -- 根据 json 准备好 texture2D 实例
+    gama.texture2D.getFromJSON csxData, (err, texture2Ds)->
+      return callback err if err
+
+      assetFrames = gama.texture2D.makeSpriteFrames(id, texture2Ds[1], csxData.atlas)
+
+      keys = {}
+      for key in pairs csxData.atlas
+        table.insert keys, key
+
+      callback nil, GamaIconPack(id, keys, assetFrames)
+      return
+    return
+
+
 
 
 

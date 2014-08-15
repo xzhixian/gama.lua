@@ -324,6 +324,48 @@ do
   _base_0.__class = _class_0
   GamaTilemap = _class_0
 end
+local GamaIconPack
+do
+  local _base_0 = {
+    drawOnSprite = function(self, sprite, key)
+      assert(sprite, "invalid sprite:" .. tostring(sprite))
+      local icon = self.icons[tostring(key)]
+      if not (icon) then
+        return print("[GamaIconPack(" .. tostring(self.id) .. ")::drawOnSprite] missing icon for " .. tostring(key))
+      end
+      sprite:setSpriteFrame(icon)
+    end
+  }
+  _base_0.__index = _base_0
+  local _class_0 = setmetatable({
+    __init = function(self, id, keys, assetFrames)
+      self.id, self.keys = id, keys
+      assert(type(id) == "string", "invalid id")
+      assert(type(keys) == "table" and #keys > 0, "invalid keys")
+      assert(type(assetFrames) == "table", "invalid assetFrames")
+      self.icons = { }
+      local _list_0 = self.keys
+      for _index_0 = 1, #_list_0 do
+        local key = _list_0[_index_0]
+        local frameKey = tostring(self.id) .. "/" .. tostring(key)
+        if assetFrames[frameKey] then
+          self.icons[key] = assetFrames[frameKey]
+        end
+      end
+    end,
+    __base = _base_0,
+    __name = "GamaIconPack"
+  }, {
+    __index = _base_0,
+    __call = function(cls, ...)
+      local _self_0 = setmetatable({}, _base_0)
+      cls.__init(_self_0, ...)
+      return _self_0
+    end
+  })
+  _base_0.__class = _class_0
+  GamaIconPack = _class_0
+end
 gama = {
   VERSION = "0.1.0",
   getAssetPath = function(id)
@@ -418,7 +460,9 @@ gama.texture2D = {
         local rect = cc.rect(frameInfo.l, frameInfo.t, frameInfo.w, frameInfo.h)
         frame = cc.SpriteFrame:createWithTexture(texture, rect)
         frame:setOriginalSizeInPixels(cc.size(512, 512))
-        frame:setOffset(cc.p(frameInfo.ox, frameInfo.oy))
+        if frameInfo.ox and frameInfo.oy then
+          frame:setOffset(cc.p(frameInfo.ox, frameInfo.oy))
+        end
         SpriteFrameCache:addSpriteFrame(frame, frameName)
         assetFrames[frameName] = frame
       end
@@ -662,6 +706,38 @@ gama.scene = {
       sceneData.brickWidth = math.floor(gamaTilemap.pixelWidth / sceneData.brick_width)
       sceneData.brickHeight = math.floor(gamaTilemap.pixelHeight / sceneData.brick_height)
       return callback(nil, results)
+    end)
+  end
+}
+gama.iconpack = {
+  loadById = function(id, callback)
+    assert(id, "invalid id")
+    assert(type(callback) == "function", "invalid callback")
+    print("[gama::iconpack::loadById] id:" .. tostring(id))
+    gama.readJSONAsync(id, function(err, data)
+      if err then
+        return callback(err)
+      end
+      return gama.iconpack.loadByCSX(data, callback)
+    end)
+  end,
+  loadByCSX = function(csxData, callback)
+    print("[gama::iconpack::loadByCSX]")
+    assert(type(callback) == "function", "invalid callback")
+    if not (csxData and csxData.type == "iconpacks") then
+      return callback("invalid csx json data")
+    end
+    local id = csxData.id
+    gama.texture2D.getFromJSON(csxData, function(err, texture2Ds)
+      if err then
+        return callback(err)
+      end
+      local assetFrames = gama.texture2D.makeSpriteFrames(id, texture2Ds[1], csxData.atlas)
+      local keys = { }
+      for key in pairs(csxData.atlas) do
+        table.insert(keys, key)
+      end
+      callback(nil, GamaIconPack(id, keys, assetFrames))
     end)
   end
 }
