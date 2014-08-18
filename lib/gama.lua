@@ -68,6 +68,12 @@ local DIRECTION_TO_FLIPX = {
 local GamaAnimation
 do
   local _base_0 = {
+    retain = function(self)
+      return self.ccAnimation:retain()
+    end,
+    release = function(self)
+      return self.ccAnimation:release()
+    end,
     playOnSprite = function(self, sprite)
       if not (sprite and type(sprite.getScene) == "function") then
         return print("[GamaAnimation(" .. tostring(self.id) .. ")::playOnSprite] invalid sprit")
@@ -327,6 +333,16 @@ end
 local GamaIconPack
 do
   local _base_0 = {
+    retain = function(self)
+      for key, spriteFrame in pairs(self.icons) do
+        spriteFrame:retain()
+      end
+    end,
+    release = function(self)
+      for key, spriteFrame in pairs(self.icons) do
+        spriteFrame:release()
+      end
+    end,
     drawOnSprite = function(self, sprite, key)
       assert(sprite, "invalid sprite:" .. tostring(sprite))
       local icon = self.icons[tostring(key)]

@@ -93,6 +93,10 @@ class GamaAnimation
     @id = id
     @ccAnimation = ccAnimation
 
+  retain: => @ccAnimation\retain!
+
+  release: => @ccAnimation\release!
+
   -- play this animation on the given sprite
   -- @param sprite  cc.Sprite
   playOnSprite: (sprite)=>
@@ -339,6 +343,15 @@ class GamaIconPack
       frameKey = "#{@id}/#{key}"
       @icons[key] = assetFrames[frameKey] if assetFrames[frameKey]
     return
+
+  retain: =>
+    for key, spriteFrame in pairs @icons
+      spriteFrame\retain!
+
+  release: =>
+    for key, spriteFrame in pairs @icons
+      spriteFrame\release!
+
 
   drawOnSprite: (sprite, key)=>
     assert sprite, "invalid sprite:#{sprite}"
