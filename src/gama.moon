@@ -26,11 +26,12 @@ WINDOW_WIDTH = WIN_SIZE.width
 HALF_WINDOW_HEIGTH = WINDOW_HEIGTH / 2
 HALF_WINDOW_WIDTH = WINDOW_WIDTH / 2
 
-EVENT_START = "start"
-EVENT_PROGRESS = "progress"
-EVENT_WARNING = "warning"
-EVENT_COMPLETE = "complete"
-EVENT_FAILED = "failed"
+
+TYPE_ANIMATION = "animations"
+TYPE_FIGURE = "figures"
+TYPE_TILEMAP = "tilemaps"
+TYPE_SCENE = "scenes"
+TYPE_ICONPACK = "iconpacks"
 
 ASSET_TYPE_CHARACTER = 10
 ASSET_TYPE_TILEMAP = 20
@@ -206,62 +207,6 @@ class GamaFigure
     return
 
 
--- 人物
---class GamaCharacter
-
-  --new: (id, gamaFigure, sprite)=>
-    --@id = id
-    --@figure = gamaFigure
-    --@motions = gamaFigure.getMotions
-    --@sprite = sprite
-
-    ---- 连续性动作的 motion id 列表
-    --@continouseMotionIds =
-      --idl: true
-
-    --@curDirection = "s"
-    --@curMotion = "idl"
-    --@applyChange!
-
-  ---- 添加连续性动作的id
-  --addContinouseMotionId: (...)=>
-    --names = {...}
-    --for name in *names
-      --@continouseMotionIds[name] = true
-
-    --console.info "[gama::] continouseMotionIds:"
-    --console.dir @continouseMotionIds
-
-    --return
-
-  --getId: => @id
-
-  --getCurDirection: => @curDirection
-
-  --getCurMotion: => @getCurMotion
-
-  --applyChange: =>
-    --@sprite\setFlippedX(DIRECTION_TO_FLIPX[@curDirection])
-
-    --if @continouseMotionIds[@curMotion]
-      --@figure\playOnSprite @sprite, @curMotion, @curDirection
-      --return
-
-    --@figure\playOnceOnSprite @sprite, @curMotion, @curDirection
-
-  --setDirection: (value)=>
-    --return if @curDirection == value  --lazy
-    --@curDirection = value
-    --@applyChange!
-    --return
-
-  --setMotion: (value)=>
-    --return if @curMotion == value   --lazy
-    --@curMotion = value
-    --@applyChange!
-    --return
-
-
 class GamaTilemap
 
   new: (id, texture2Ds, pixelWidth, pixelHeight, pixelTileSize)=>
@@ -383,17 +328,6 @@ class GamaTilemap
       @updateContainerPosition!
     return
 
---class GamaScene
-
-  --new: (id, sceneData, gamaTilemap)=>
-    --assert id, "missing id"
-    --assert sceneData, "invalid scene data"
-    --assert gamaTilemap.__class == "GamaTilemap", "invalid gama tilemap"
-
-    --@sceneData = sceneData
-    --@tilemap = gamaTilemap
-
-
 class GamaIconPack
 
   new: (@id, @keys, assetFrames)=>
@@ -413,67 +347,86 @@ class GamaIconPack
     sprite\setSpriteFrame icon
     return
 
-gama =
-  VERSION:  "0.1.0"
+--gama = nil
 
-  getAssetPath: (id)-> "#{id}"
+local *
 
-  readJSONAsync: (id, callback)->
-    assert id, "missing id"
-    assert type(callback) == "function", "invalid callback"
-    path =  "#{id}.csx"
-    return callback "file:#{path} not found" unless fs\isFileExist path
 
-    status, content = pcall fs.getStringFromFile, fs, path
+readJSON = (id)->
+  path =  "#{id}.csx"
+  print "[gama::readJSON] path:#{path}"
 
-    return callback "fail to read file:#{path}, error:#{content}" unless status
+  unless fs\isFileExist path
+    print "[gama::readJSON] file not found:#{path}"
+    return nil
 
-    status, content = pcall cjson.decode, content
+  content = fs\getStringFromFile path
 
-    return callback "fail to decode json from:#{path}, error:#{content}" unless status
+  -- TODO: use sting.match
+  return cjson.decode content
 
-    return callback nil, content
 
-  readJSON: (id)->
-    path =  "#{id}.csx"
-    print "[gama::readJSON] path:#{path}"
+readJSONAsync = (id, callback)->
+  assert id, "missing id"
+  assert type(callback) == "function", "invalid callback"
+  path =  "#{id}.csx"
+  return callback "file:#{path} not found" unless fs\isFileExist path
 
-    unless fs\isFileExist path
-      print "[gama::readJSON] file not found:#{path}"
-      return nil
+  status, content = pcall fs.getStringFromFile, fs, path
 
-    content = fs\getStringFromFile path
+  return callback "fail to read file:#{path}, error:#{content}" unless status
 
-    -- TODO: use sting.match
-    return cjson.decode content
+  status, content = pcall cjson.decode, content
 
-  -- return the asset type of given asset id
-  -- @param id
-  -- @return asset type, or nil
-  getTypeById:  (id)->
+  return callback "fail to decode json from:#{path}, error:#{content}" unless status
 
-    type = ASSET_ID_TO_TYPE_KV[id]
-    return type if type
+  return callback nil, content
 
-    obj = gama.readJSON id
-    return nil unless obj
 
-    type = obj["type"]
-    ASSET_ID_TO_TYPE_KV[id] = type
+-- return the asset type of given asset id
+-- @param id
+-- @return asset type, or nil
+getTypeById = (id)->
 
-    print "[gama::getTypeById] type:#{type}"
+  type = ASSET_ID_TO_TYPE_KV[id]
+  return type if type
 
-    return type
+  obj = readJSON id
+  return nil unless obj
 
-  -- 创建一个 GamaFigure 实例，并且将这个实例绑定到用于显示其的 Sprite 上
-  --createCharacterWithSprite: (id, gamaFigure, sprite)->
-    --assert id
-    --assert gamaFigure
-    --assert sprite
-    --return GamaCharacter(id, gamaFigure, sprite)
+  type = obj["type"]
+  ASSET_ID_TO_TYPE_KV[id] = type
+
+  print "[gama::getTypeById] type:#{type}"
+
+  return type
+
+
+loadById = (id, callback)->
+  assert id, "missing id"
+  assert type(callback) == "function", "invalid callback"
+
+  readJSONAsync id, (err, csxData)->
+    return callback err if err
+    return callback "invalid csx data" unless csxData and csxData.type
+    switch csxData.type
+      when TYPE_ANIMATION
+        Animation.loadByCSX csxData, callback
+      when TYPE_ICONPACK
+        Iconpack.loadByCSX csxData, callback
+      when TYPE_FIGURE
+        Figure.loadByCSX csxData, callback
+      when TYPE_SCENE
+        Scene.loadByCSX csxData, callback
+      when TYPE_TILEMAP
+        Tilemap.loadByCSX csxData, callback
+      else
+        callback "unknow type:#{csxData.type}"
+    return
+  return
 
 -- 管理和处理 texture2D
-gama.texture2D =
+texture2D =
 
   --- getTextureById
   -- 获取纹理
@@ -488,7 +441,7 @@ gama.texture2D =
     callback = callback or DUMMY_CALLBACK
     assert(type(callback) == "function", "invalid callback: #{callback}")
 
-    pathToFile = gama.getAssetPath id
+    pathToFile = tostring(id)
 
     texture = TextureCache\getTextureForKey(pathToFile)
 
@@ -518,7 +471,7 @@ gama.texture2D =
     return callback "invalid textureIds:#{textureIds}, field:#{TEXTURE_FIELD_ID_1} or #{TEXTURE_FIELD_ID_2}" unless type(textureIds) == "table" and #textureIds > 0
 
     -- 根据 textureIds 准备好 texture2D 实例
-    async.mapSeries textureIds, gama.texture2D.getById, callback
+    async.mapSeries textureIds, texture2D.getById, callback
 
     return
 
@@ -559,7 +512,7 @@ gama.texture2D =
 
 
 -- Animation module
-gama.animation =
+Animation =
 
   -- @param {table} data, csx json data
   getByCSX: (data, callback)->
@@ -573,21 +526,21 @@ gama.animation =
     id = data.id
 
     -- 根据 json 准备好 texture2D 实例
-    gama.texture2D.getFromJSON data, (err, texture2Ds)->
+    texture2D.getFromJSON data, (err, texture2Ds)->
       return callback err if err
 
-      animation = AnimationCache\getAnimation id   -- 先到缓存里面找
+      ani = AnimationCache\getAnimation id   -- 先到缓存里面找
 
-      unless animation
-        assetFrames = gama.texture2D.makeSpriteFrames(id, texture2Ds[1], data.atlas)
+      unless ani
+        assetFrames = texture2D.makeSpriteFrames(id, texture2Ds[1], data.atlas)
         playframes = {}
         defaultFrame = assetFrames["#{id}/1"]
         for assetId in *data.playframes
           table.insert(playframes, (assetFrames["#{id}/#{assetId + 1}"] or defaultFrame))
-        animation = cc.Animation\createWithSpriteFrames(playframes, SPF)
-        AnimationCache\addAnimation(animation, id)  -- 加入到缓存，避免再次计算
+        ani = cc.Animation\createWithSpriteFrames(playframes, SPF)
+        AnimationCache\addAnimation(ani, id)  -- 加入到缓存，避免再次计算
 
-      gamaAnimation = GamaAnimation(id, animation)
+      gamaAnimation = GamaAnimation(id, ani)
 
       callback nil, gamaAnimation
 
@@ -597,27 +550,27 @@ gama.animation =
   -- @param {function} callback, signature: callback(err, gamaAnimation)
   getById:  (id, callback)->
     print "[gama::animation::getById] id:#{id}"
-    gama.animation.getByCSX(gama.readJSON(id), callback)
+    Animation.getByCSX(readJSON(id), callback)
     return
 
 
-gama.figure =
+Figure =
 
   -- @param {function} callback, signature: callback(err, gamaFigure)
   getById:  (id, callback)->
     print "[gama::tilemap::getById] id:#{id}"
-    gama.figure.getByCSX(gama.readJSON(id), callback)
+    Figure.getByCSX(readJSON(id), callback)
     return
 
   -- 根据 character id 来获取 figure
   getByCharacterId:  (id, callback)->
     assert type(callback) == "function", "invalid callback"
-    gama.readJSONAsync id, (err, data)->
+    readJSONAsync id, (err, data)->
       return callback err if err
       return callback "invalid character data for id:#{id}" unless data and data.type == "characters" and type(data.figure) == "table"
       -- NOTE: 将所请求的 figure 的 id 重置为 character 的 id
       data.figure.id = id
-      gama.figure.getByCSX(data.figure, callback)
+      Figure.getByCSX(data.figure, callback)
       return
 
   -- @param {table} data, csx json data
@@ -632,7 +585,7 @@ gama.figure =
     id = data.id
 
     -- 根据 json 准备好 texture2D 实例
-    gama.texture2D.getFromJSON data, (err, texture2Ds)->
+    texture2D.getFromJSON data, (err, texture2Ds)->
 
       return callback err if err
 
@@ -640,7 +593,7 @@ gama.figure =
       assetFrames = {}
       for i, texture in ipairs texture2Ds
         arrangement = data.atlas[i].arrangment
-        gama.texture2D.makeSpriteFrames(id, texture, arrangement, assetFrames)
+        texture2D.makeSpriteFrames(id, texture, arrangement, assetFrames)
 
       for motionName, directionSet in pairs data.playframes       -- 遍历动作
         for direction, assetFrameIds in pairs directionSet        -- 遍历每个动作的方向
@@ -669,12 +622,12 @@ gama.figure =
     return
 
 
-gama.tilemap =
+Tilemap =
 
   -- @param {function} callback, signature: callback(err, gamaTilemap)
   getById:  (id, callback)->
     print "[gama::tilemap::getById] id:#{id}"
-    gama.tilemap.getByCSX(gama.readJSON(id), callback)
+    Tilemap.getByCSX(readJSON(id), callback)
     return
 
   -- @param {table} data, csx json data
@@ -689,7 +642,7 @@ gama.tilemap =
     id = data.id
 
     -- 根据 json 准备好 texture2D 实例
-    gama.texture2D.getFromJSON data, (err, texture2Ds)->
+    texture2D.getFromJSON data, (err, texture2Ds)->
 
       return callback err if err
 
@@ -699,9 +652,31 @@ gama.tilemap =
 
     return
 
-gama.scene =
+Scene =
 
   --loadedData: nil
+
+  jobProcessor: (job, next)->
+    assetId, jobType = unpack job
+
+    switch jobType
+      when ASSET_TYPE_CHARACTER
+        Figure.getByCharacterId assetId, next
+
+      when ASSET_TYPE_TILEMAP
+        Tilemap.getById assetId, next
+
+      when ASSET_TYPE_ANIMATION
+        Animation.getById assetId, (err, gamaAnimation)->
+          if err
+            print "WARN:[gama::scene::load animation] skip invalid animation:#{assetId}, error:#{err}"
+            err = nil
+          return next err, gamaAnimation
+      else
+        print "ERROR: [gama::scene::loadById::on job] unknown asset type:#{jobType}"
+
+    return
+
 
   cleanup:  ->
     SpriteFrameCache\removeUnusedSpriteFrames!
@@ -718,9 +693,9 @@ gama.scene =
     print "[gama::scene::loadById] id:#{id}"
 
     -- 加载场景数据
-    gama.readJSONAsync id, (err, sceneData)->
+    readJSONAsync id, (err, sceneData)->
       return callback err if err
-      return gama.scene.loadByCSX sceneData, callback
+      return Scene.loadByCSX sceneData, callback
 
 
   -- @param {table} data, csx json data
@@ -781,29 +756,7 @@ gama.scene =
           table.insert jobs, {assetId, ASSET_TYPE_ANIMATION}
           rawset pushedIds, assetId, true
 
-    processor = (job, next)->
-      asserId, jobType = unpack job
-
-      switch jobType
-        when ASSET_TYPE_CHARACTER
-          gama.figure.getByCharacterId asserId, next
-
-        when ASSET_TYPE_TILEMAP
-          gama.tilemap.getById asserId, next
-
-        when ASSET_TYPE_ANIMATION
-          --gama.animation.getById asserId, next
-          gama.animation.getById asserId, (err, gamaAnimation)->
-            if err
-              console.warn "[gama::scene::load animation] skip invalid animation:#{assetId}, error:#{err}"
-              err = nil
-            return next err, gamaAnimation
-        else
-          console.error "[gama::scene::loadById::on job] unknown asset type:#{jobType}"
-
-      return
-
-    async.mapSeries jobs, processor, (err, results)->
+    async.mapSeries jobs, Scene.jobProcessor, (err, results)->
       return callback(err) if err
 
       gamaTilemap = results[1]
@@ -832,7 +785,7 @@ gama.scene =
     return
 
 
-gama.iconpack =
+Iconpack =
 
   -- callback signature: callback(err, gamaIconPack)
   loadById: (id, callback)->
@@ -844,9 +797,9 @@ gama.iconpack =
     print "[gama::iconpack::loadById] id:#{id}"
 
     -- 加载场景数据
-    gama.readJSONAsync id, (err, data)->
+    readJSONAsync id, (err, data)->
       return callback err if err
-      return gama.iconpack.loadByCSX data, callback
+      return Iconpack.loadByCSX data, callback
 
     return
 
@@ -861,10 +814,10 @@ gama.iconpack =
     id = csxData.id
 
     -- 根据 json 准备好 texture2D 实例
-    gama.texture2D.getFromJSON csxData, (err, texture2Ds)->
+    texture2D.getFromJSON csxData, (err, texture2Ds)->
       return callback err if err
 
-      assetFrames = gama.texture2D.makeSpriteFrames(id, texture2Ds[1], csxData.atlas)
+      assetFrames = texture2D.makeSpriteFrames(id, texture2Ds[1], csxData.atlas)
 
       keys = {}
       for key in pairs csxData.atlas
@@ -873,6 +826,26 @@ gama.iconpack =
       callback nil, GamaIconPack(id, keys, assetFrames)
       return
     return
+
+
+gama =
+  VERSION:  "0.1.0"
+
+  :readJSONAsync
+  :readJSON
+  :getTypeById
+
+  animation: Animation
+  figure: Figure
+  tilemap: Tilemap
+  scene:Scene
+  iconpack: Iconpack
+
+  :TYPE_ANIMATION
+  :TYPE_FIGURE
+  :TYPE_TILEMAP
+  :TYPE_SCENE
+  :TYPE_ICONPACK
 
 
 return gama

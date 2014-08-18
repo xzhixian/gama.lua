@@ -21,11 +21,11 @@ local WINDOW_HEIGTH = WIN_SIZE.height
 local WINDOW_WIDTH = WIN_SIZE.width
 local HALF_WINDOW_HEIGTH = WINDOW_HEIGTH / 2
 local HALF_WINDOW_WIDTH = WINDOW_WIDTH / 2
-local EVENT_START = "start"
-local EVENT_PROGRESS = "progress"
-local EVENT_WARNING = "warning"
-local EVENT_COMPLETE = "complete"
-local EVENT_FAILED = "failed"
+local TYPE_ANIMATION = "animations"
+local TYPE_FIGURE = "figures"
+local TYPE_TILEMAP = "tilemaps"
+local TYPE_SCENE = "scenes"
+local TYPE_ICONPACK = "iconpacks"
 local ASSET_TYPE_CHARACTER = 10
 local ASSET_TYPE_TILEMAP = 20
 local ASSET_TYPE_ANIMATION = 30
@@ -366,59 +366,80 @@ do
   _base_0.__class = _class_0
   GamaIconPack = _class_0
 end
-local gama = {
-  VERSION = "0.1.0",
-  getAssetPath = function(id)
-    return tostring(id)
-  end,
-  readJSONAsync = function(id, callback)
-    assert(id, "missing id")
-    assert(type(callback) == "function", "invalid callback")
-    local path = tostring(id) .. ".csx"
-    if not (fs:isFileExist(path)) then
-      return callback("file:" .. tostring(path) .. " not found")
-    end
-    local status, content = pcall(fs.getStringFromFile, fs, path)
-    if not (status) then
-      return callback("fail to read file:" .. tostring(path) .. ", error:" .. tostring(content))
-    end
-    status, content = pcall(cjson.decode, content)
-    if not (status) then
-      return callback("fail to decode json from:" .. tostring(path) .. ", error:" .. tostring(content))
-    end
-    return callback(nil, content)
-  end,
-  readJSON = function(id)
-    local path = tostring(id) .. ".csx"
-    print("[gama::readJSON] path:" .. tostring(path))
-    if not (fs:isFileExist(path)) then
-      print("[gama::readJSON] file not found:" .. tostring(path))
-      return nil
-    end
-    local content = fs:getStringFromFile(path)
-    return cjson.decode(content)
-  end,
-  getTypeById = function(id)
-    local type = ASSET_ID_TO_TYPE_KV[id]
-    if type then
-      return type
-    end
-    local obj = gama.readJSON(id)
-    if not (obj) then
-      return nil
-    end
-    type = obj["type"]
-    ASSET_ID_TO_TYPE_KV[id] = type
-    print("[gama::getTypeById] type:" .. tostring(type))
+local readJSON, readJSONAsync, getTypeById, loadById, texture2D, Animation, Figure, Tilemap, Scene, Iconpack, gama
+readJSON = function(id)
+  local path = tostring(id) .. ".csx"
+  print("[gama::readJSON] path:" .. tostring(path))
+  if not (fs:isFileExist(path)) then
+    print("[gama::readJSON] file not found:" .. tostring(path))
+    return nil
+  end
+  local content = fs:getStringFromFile(path)
+  return cjson.decode(content)
+end
+readJSONAsync = function(id, callback)
+  assert(id, "missing id")
+  assert(type(callback) == "function", "invalid callback")
+  local path = tostring(id) .. ".csx"
+  if not (fs:isFileExist(path)) then
+    return callback("file:" .. tostring(path) .. " not found")
+  end
+  local status, content = pcall(fs.getStringFromFile, fs, path)
+  if not (status) then
+    return callback("fail to read file:" .. tostring(path) .. ", error:" .. tostring(content))
+  end
+  status, content = pcall(cjson.decode, content)
+  if not (status) then
+    return callback("fail to decode json from:" .. tostring(path) .. ", error:" .. tostring(content))
+  end
+  return callback(nil, content)
+end
+getTypeById = function(id)
+  local type = ASSET_ID_TO_TYPE_KV[id]
+  if type then
     return type
   end
-}
-gama.texture2D = {
+  local obj = readJSON(id)
+  if not (obj) then
+    return nil
+  end
+  type = obj["type"]
+  ASSET_ID_TO_TYPE_KV[id] = type
+  print("[gama::getTypeById] type:" .. tostring(type))
+  return type
+end
+loadById = function(id, callback)
+  assert(id, "missing id")
+  assert(type(callback) == "function", "invalid callback")
+  readJSONAsync(id, function(err, csxData)
+    if err then
+      return callback(err)
+    end
+    if not (csxData and csxData.type) then
+      return callback("invalid csx data")
+    end
+    local _exp_0 = csxData.type
+    if TYPE_ANIMATION == _exp_0 then
+      Animation.loadByCSX(csxData, callback)
+    elseif TYPE_ICONPACK == _exp_0 then
+      Iconpack.loadByCSX(csxData, callback)
+    elseif TYPE_FIGURE == _exp_0 then
+      Figure.loadByCSX(csxData, callback)
+    elseif TYPE_SCENE == _exp_0 then
+      Scene.loadByCSX(csxData, callback)
+    elseif TYPE_TILEMAP == _exp_0 then
+      Tilemap.loadByCSX(csxData, callback)
+    else
+      callback("unknow type:" .. tostring(csxData.type))
+    end
+  end)
+end
+texture2D = {
   getById = function(id, callback)
     print("[gama::Texture2D::getById] id:" .. tostring(id))
     callback = callback or DUMMY_CALLBACK
     assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
-    local pathToFile = gama.getAssetPath(id)
+    local pathToFile = tostring(id)
     local texture = TextureCache:getTextureForKey(pathToFile)
     if texture then
       print("[gama::Texture2D::getById] texture avilable for id:" .. tostring(id) .. tostring(extname))
@@ -447,7 +468,7 @@ gama.texture2D = {
     if not (type(textureIds) == "table" and #textureIds > 0) then
       return callback("invalid textureIds:" .. tostring(textureIds) .. ", field:" .. tostring(TEXTURE_FIELD_ID_1) .. " or " .. tostring(TEXTURE_FIELD_ID_2))
     end
-    async.mapSeries(textureIds, gama.texture2D.getById, callback)
+    async.mapSeries(textureIds, texture2D.getById, callback)
   end,
   makeSpriteFrames = function(assetId, texture, arrangement, assetFrames)
     assetFrames = assetFrames or { }
@@ -470,7 +491,7 @@ gama.texture2D = {
     return assetFrames
   end
 }
-gama.animation = {
+Animation = {
   getByCSX = function(data, callback)
     callback = callback or DUMMY_CALLBACK
     assert(type(callback) == "function", "invalid callback: " .. tostring(callback))
@@ -478,13 +499,13 @@ gama.animation = {
       return callback("invalid csx json data")
     end
     local id = data.id
-    gama.texture2D.getFromJSON(data, function(err, texture2Ds)
+    texture2D.getFromJSON(data, function(err, texture2Ds)
       if err then
         return callback(err)
       end
-      local animation = AnimationCache:getAnimation(id)
-      if not (animation) then
-        local assetFrames = gama.texture2D.makeSpriteFrames(id, texture2Ds[1], data.atlas)
+      local ani = AnimationCache:getAnimation(id)
+      if not (ani) then
+        local assetFrames = texture2D.makeSpriteFrames(id, texture2Ds[1], data.atlas)
         local playframes = { }
         local defaultFrame = assetFrames[tostring(id) .. "/1"]
         local _list_0 = data.playframes
@@ -492,26 +513,26 @@ gama.animation = {
           local assetId = _list_0[_index_0]
           table.insert(playframes, (assetFrames[tostring(id) .. "/" .. tostring(assetId + 1)] or defaultFrame))
         end
-        animation = cc.Animation:createWithSpriteFrames(playframes, SPF)
-        AnimationCache:addAnimation(animation, id)
+        ani = cc.Animation:createWithSpriteFrames(playframes, SPF)
+        AnimationCache:addAnimation(ani, id)
       end
-      local gamaAnimation = GamaAnimation(id, animation)
+      local gamaAnimation = GamaAnimation(id, ani)
       return callback(nil, gamaAnimation)
     end)
   end,
   getById = function(id, callback)
     print("[gama::animation::getById] id:" .. tostring(id))
-    gama.animation.getByCSX(gama.readJSON(id), callback)
+    Animation.getByCSX(readJSON(id), callback)
   end
 }
-gama.figure = {
+Figure = {
   getById = function(id, callback)
     print("[gama::tilemap::getById] id:" .. tostring(id))
-    gama.figure.getByCSX(gama.readJSON(id), callback)
+    Figure.getByCSX(readJSON(id), callback)
   end,
   getByCharacterId = function(id, callback)
     assert(type(callback) == "function", "invalid callback")
-    return gama.readJSONAsync(id, function(err, data)
+    return readJSONAsync(id, function(err, data)
       if err then
         return callback(err)
       end
@@ -519,7 +540,7 @@ gama.figure = {
         return callback("invalid character data for id:" .. tostring(id))
       end
       data.figure.id = id
-      gama.figure.getByCSX(data.figure, callback)
+      Figure.getByCSX(data.figure, callback)
     end)
   end,
   getByCSX = function(data, callback)
@@ -529,14 +550,14 @@ gama.figure = {
       return callback("invalid csx json data")
     end
     local id = data.id
-    gama.texture2D.getFromJSON(data, function(err, texture2Ds)
+    texture2D.getFromJSON(data, function(err, texture2Ds)
       if err then
         return callback(err)
       end
       local assetFrames = { }
       for i, texture in ipairs(texture2Ds) do
         local arrangement = data.atlas[i].arrangment
-        gama.texture2D.makeSpriteFrames(id, texture, arrangement, assetFrames)
+        texture2D.makeSpriteFrames(id, texture, arrangement, assetFrames)
       end
       for motionName, directionSet in pairs(data.playframes) do
         for direction, assetFrameIds in pairs(directionSet) do
@@ -564,10 +585,10 @@ gama.figure = {
     end)
   end
 }
-gama.tilemap = {
+Tilemap = {
   getById = function(id, callback)
     print("[gama::tilemap::getById] id:" .. tostring(id))
-    gama.tilemap.getByCSX(gama.readJSON(id), callback)
+    Tilemap.getByCSX(readJSON(id), callback)
   end,
   getByCSX = function(data, callback)
     callback = callback or DUMMY_CALLBACK
@@ -576,7 +597,7 @@ gama.tilemap = {
       return callback("invalid csx json data")
     end
     local id = data.id
-    gama.texture2D.getFromJSON(data, function(err, texture2Ds)
+    texture2D.getFromJSON(data, function(err, texture2Ds)
       if err then
         return callback(err)
       end
@@ -585,7 +606,26 @@ gama.tilemap = {
     end)
   end
 }
-gama.scene = {
+Scene = {
+  jobProcessor = function(job, next)
+    local assetId, jobType = unpack(job)
+    local _exp_0 = jobType
+    if ASSET_TYPE_CHARACTER == _exp_0 then
+      Figure.getByCharacterId(assetId, next)
+    elseif ASSET_TYPE_TILEMAP == _exp_0 then
+      Tilemap.getById(assetId, next)
+    elseif ASSET_TYPE_ANIMATION == _exp_0 then
+      Animation.getById(assetId, function(err, gamaAnimation)
+        if err then
+          print("WARN:[gama::scene::load animation] skip invalid animation:" .. tostring(assetId) .. ", error:" .. tostring(err))
+          err = nil
+        end
+        return next(err, gamaAnimation)
+      end)
+    else
+      print("ERROR: [gama::scene::loadById::on job] unknown asset type:" .. tostring(jobType))
+    end
+  end,
   cleanup = function()
     SpriteFrameCache:removeUnusedSpriteFrames()
     TextureCache:removeUnusedTextures()
@@ -594,11 +634,11 @@ gama.scene = {
     assert(id, "missing scene id")
     assert(type(callback) == "function", "invalid callback")
     print("[gama::scene::loadById] id:" .. tostring(id))
-    return gama.readJSONAsync(id, function(err, sceneData)
+    return readJSONAsync(id, function(err, sceneData)
       if err then
         return callback(err)
       end
-      return gama.scene.loadByCSX(sceneData, callback)
+      return Scene.loadByCSX(sceneData, callback)
     end)
   end,
   loadByCSX = function(sceneData, callback)
@@ -666,27 +706,7 @@ gama.scene = {
         end
       end
     end
-    local processor
-    processor = function(job, next)
-      local asserId, jobType = unpack(job)
-      local _exp_0 = jobType
-      if ASSET_TYPE_CHARACTER == _exp_0 then
-        gama.figure.getByCharacterId(asserId, next)
-      elseif ASSET_TYPE_TILEMAP == _exp_0 then
-        gama.tilemap.getById(asserId, next)
-      elseif ASSET_TYPE_ANIMATION == _exp_0 then
-        gama.animation.getById(asserId, function(err, gamaAnimation)
-          if err then
-            console.warn("[gama::scene::load animation] skip invalid animation:" .. tostring(assetId) .. ", error:" .. tostring(err))
-            err = nil
-          end
-          return next(err, gamaAnimation)
-        end)
-      else
-        console.error("[gama::scene::loadById::on job] unknown asset type:" .. tostring(jobType))
-      end
-    end
-    async.mapSeries(jobs, processor, function(err, results)
+    async.mapSeries(jobs, Scene.jobProcessor, function(err, results)
       if err then
         return callback(err)
       end
@@ -709,16 +729,16 @@ gama.scene = {
     end)
   end
 }
-gama.iconpack = {
+Iconpack = {
   loadById = function(id, callback)
     assert(id, "invalid id")
     assert(type(callback) == "function", "invalid callback")
     print("[gama::iconpack::loadById] id:" .. tostring(id))
-    gama.readJSONAsync(id, function(err, data)
+    readJSONAsync(id, function(err, data)
       if err then
         return callback(err)
       end
-      return gama.iconpack.loadByCSX(data, callback)
+      return Iconpack.loadByCSX(data, callback)
     end)
   end,
   loadByCSX = function(csxData, callback)
@@ -728,11 +748,11 @@ gama.iconpack = {
       return callback("invalid csx json data")
     end
     local id = csxData.id
-    gama.texture2D.getFromJSON(csxData, function(err, texture2Ds)
+    texture2D.getFromJSON(csxData, function(err, texture2Ds)
       if err then
         return callback(err)
       end
-      local assetFrames = gama.texture2D.makeSpriteFrames(id, texture2Ds[1], csxData.atlas)
+      local assetFrames = texture2D.makeSpriteFrames(id, texture2Ds[1], csxData.atlas)
       local keys = { }
       for key in pairs(csxData.atlas) do
         table.insert(keys, key)
@@ -740,5 +760,21 @@ gama.iconpack = {
       callback(nil, GamaIconPack(id, keys, assetFrames))
     end)
   end
+}
+gama = {
+  VERSION = "0.1.0",
+  readJSONAsync = readJSONAsync,
+  readJSON = readJSON,
+  getTypeById = getTypeById,
+  animation = Animation,
+  figure = Figure,
+  tilemap = Tilemap,
+  scene = Scene,
+  iconpack = Iconpack,
+  TYPE_ANIMATION = TYPE_ANIMATION,
+  TYPE_FIGURE = TYPE_FIGURE,
+  TYPE_TILEMAP = TYPE_TILEMAP,
+  TYPE_SCENE = TYPE_SCENE,
+  TYPE_ICONPACK = TYPE_ICONPACK
 }
 return gama
