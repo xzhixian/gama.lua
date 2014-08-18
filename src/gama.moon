@@ -413,8 +413,6 @@ class GamaIconPack
     sprite\setSpriteFrame icon
     return
 
-export gama
-
 gama =
   VERSION:  "0.1.0"
 
@@ -877,6 +875,6 @@ gama.iconpack =
     return
 
 
-
+return gama
 
 

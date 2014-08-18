@@ -366,7 +366,7 @@ do
   _base_0.__class = _class_0
   GamaIconPack = _class_0
 end
-gama = {
+local gama = {
   VERSION = "0.1.0",
   getAssetPath = function(id)
     return tostring(id)
@@ -741,3 +741,4 @@ gama.iconpack = {
     end)
   end
 }
+return gama
