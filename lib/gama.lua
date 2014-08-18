@@ -766,6 +766,7 @@ gama = {
   readJSONAsync = readJSONAsync,
   readJSON = readJSON,
   getTypeById = getTypeById,
+  loadById = loadById,
   animation = Animation,
   figure = Figure,
   tilemap = Tilemap,

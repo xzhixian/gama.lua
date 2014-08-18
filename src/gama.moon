@@ -834,6 +834,7 @@ gama =
   :readJSONAsync
   :readJSON
   :getTypeById
+  :loadById
 
   animation: Animation
   figure: Figure
