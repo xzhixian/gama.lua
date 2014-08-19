@@ -424,15 +424,15 @@ loadById = (id, callback)->
     return callback "invalid csx data" unless csxData and csxData.type
     switch csxData.type
       when TYPE_ANIMATION
-        Animation.loadByCSX csxData, callback
+        Animation.getByCSX csxData, callback
       when TYPE_ICONPACK
-        Iconpack.loadByCSX csxData, callback
+        Iconpack.getByCSX csxData, callback
       when TYPE_FIGURE
-        Figure.loadByCSX csxData, callback
+        Figure.getByCSX csxData, callback
       when TYPE_SCENE
-        Scene.loadByCSX csxData, callback
+        Scene.getByCSX csxData, callback
       when TYPE_TILEMAP
-        Tilemap.loadByCSX csxData, callback
+        Tilemap.getByCSX csxData, callback
       else
         callback "unknow type:#{csxData.type}"
     return
@@ -708,16 +708,16 @@ Scene =
     -- 加载场景数据
     readJSONAsync id, (err, sceneData)->
       return callback err if err
-      return Scene.loadByCSX sceneData, callback
+      return Scene.getByCSX sceneData, callback
 
 
   -- @param {table} data, csx json data
-  loadByCSX: (sceneData, callback)->
+  getByCSX: (sceneData, callback)->
 
     assert sceneData and sceneData.type == "scenes", "invalid data type"
     assert type(callback) == "function", "invalid callback"
 
-    print "[gama::scene::loadByCSX]"
+    print "[gama::scene::getByCSX]"
 
     jobs = {}
     pushedIds = {}
@@ -801,7 +801,7 @@ Scene =
 Iconpack =
 
   -- callback signature: callback(err, gamaIconPack)
-  loadById: (id, callback)->
+  getById: (id, callback)->
 
     assert id, "invalid id"
 
@@ -812,13 +812,13 @@ Iconpack =
     -- 加载场景数据
     readJSONAsync id, (err, data)->
       return callback err if err
-      return Iconpack.loadByCSX data, callback
+      return Iconpack.getByCSX data, callback
 
     return
 
   -- @param {table} data, csx json data
-  loadByCSX: (csxData, callback)->
-    print "[gama::iconpack::loadByCSX]"
+  getByCSX: (csxData, callback)->
+    print "[gama::iconpack::getByCSX]"
 
     assert type(callback) == "function", "invalid callback"
 

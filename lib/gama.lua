@@ -436,15 +436,15 @@ loadById = function(id, callback)
     end
     local _exp_0 = csxData.type
     if TYPE_ANIMATION == _exp_0 then
-      Animation.loadByCSX(csxData, callback)
+      Animation.getByCSX(csxData, callback)
     elseif TYPE_ICONPACK == _exp_0 then
-      Iconpack.loadByCSX(csxData, callback)
+      Iconpack.getByCSX(csxData, callback)
     elseif TYPE_FIGURE == _exp_0 then
-      Figure.loadByCSX(csxData, callback)
+      Figure.getByCSX(csxData, callback)
     elseif TYPE_SCENE == _exp_0 then
-      Scene.loadByCSX(csxData, callback)
+      Scene.getByCSX(csxData, callback)
     elseif TYPE_TILEMAP == _exp_0 then
-      Tilemap.loadByCSX(csxData, callback)
+      Tilemap.getByCSX(csxData, callback)
     else
       callback("unknow type:" .. tostring(csxData.type))
     end
@@ -654,13 +654,13 @@ Scene = {
       if err then
         return callback(err)
       end
-      return Scene.loadByCSX(sceneData, callback)
+      return Scene.getByCSX(sceneData, callback)
     end)
   end,
-  loadByCSX = function(sceneData, callback)
+  getByCSX = function(sceneData, callback)
     assert(sceneData and sceneData.type == "scenes", "invalid data type")
     assert(type(callback) == "function", "invalid callback")
-    print("[gama::scene::loadByCSX]")
+    print("[gama::scene::getByCSX]")
     local jobs = { }
     local pushedIds = { }
     sceneData.binaryBlock = fromhex(sceneData.mask_binary[1])
@@ -746,7 +746,7 @@ Scene = {
   end
 }
 Iconpack = {
-  loadById = function(id, callback)
+  getById = function(id, callback)
     assert(id, "invalid id")
     assert(type(callback) == "function", "invalid callback")
     print("[gama::iconpack::loadById] id:" .. tostring(id))
@@ -754,11 +754,11 @@ Iconpack = {
       if err then
         return callback(err)
       end
-      return Iconpack.loadByCSX(data, callback)
+      return Iconpack.getByCSX(data, callback)
     end)
   end,
-  loadByCSX = function(csxData, callback)
-    print("[gama::iconpack::loadByCSX]")
+  getByCSX = function(csxData, callback)
+    print("[gama::iconpack::getByCSX]")
     assert(type(callback) == "function", "invalid callback")
     if not (csxData and csxData.type == "iconpacks") then
       return callback("invalid csx json data")
