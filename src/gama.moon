@@ -1,6 +1,7 @@
 
 async = require "async"
 cjson = require "cjson"
+AudioEngine = require "AudioEngine"
 
 print "[gama] init"
 
@@ -49,6 +50,9 @@ TEXTURE_FIELD_ID_2 = "jpg"
 -- 在 sprite 上播放内容的 action
 TAG_PLAYFRAME_ACTION = 65535
 
+-- 在 sprite 上播放 音效
+TAG_SOUND_FX_ACTION = 65534
+
 SPF = 1 / 20
 
 TILE_TEXTURE_RECTS =
@@ -79,6 +83,31 @@ DIRECTION_TO_FLIPX =
   sw: true
   w: true
   nw: true
+
+LOADED_SOUND_EFFECT_FILES = {}
+
+playSoundFx = (id)->
+  filename = "#{id}.mp3"
+  LOADED_SOUND_EFFECT_FILES = true
+  AudioEngine.playEffect filename
+  return
+
+-- @param {array}  soundFx, 格式: delay, soundId, delay, soundId ...
+soundFX2Action = (soundFx)->
+  return nil unless type(soundFx) == "table" and #soundFx > 1
+
+  -- 简单版本
+  return playSoundFx soundFx[2] if #soundFx == 2 and soundFx[1] == 0
+
+  sequence = {}
+  soundFxIds = {}
+
+  for i = 1, #soundFx, 2
+    table.insert sequence, cc.DelayTime\create soundFx[i]
+    table.insert soundFxIds, soundFx[i + 1]
+    table.insert sequence, cc.CallFunc\create -> playSoundFx(table.remove(soundFxIds, 1))
+
+  return cc.Sequence\create(unpack(sequence))
 
 
 -- 数据模型类: Gama 动画单元
@@ -145,6 +174,11 @@ class GamaFigure
     else
       return DIRECTION_TO_FLIPX[direction]
 
+  getSoundFX: (motionName, direction)=>
+    return nil if @soundfxs == nil
+    return nil if @soundfxs[motionName] == nil
+    return @soundfxs[motionName][direction]
+
   -- 根据动作名字和方向 找到对应的动画
   -- @param motionName
   -- @param direction
@@ -152,20 +186,20 @@ class GamaFigure
   findAnimation: (motionName, direction, fallbackToDefaultMotion)=>
     animationName = "#{@id}/#{motionName}/#{direction}"
     animation = AnimationCache\getAnimation animationName   -- 先到缓存里面找
-    return animation, @isFlipped(motionName, direction) if animation
+    return animation, @isFlipped(motionName, direction), @getSoundFX(motionName, direction) if animation
 
     -- 尝试找当前动作下的默认方向
     animation = AnimationCache\getAnimation "#{@id}/#{motionName}/#{@defaultDirection}"
-    return animation, @isFlipped(motionName, @defaultDirection) if animation
+    return animation, @isFlipped(motionName, @defaultDirection), @getSoundFX(motionName, direction) if animation
 
     return unless fallbackToDefaultMotion
 
     print "[GamaFigure(#{@id})::findAnimation] missing animation for motionName:#{motionName}, direction:#{direction}, use defaults"
     animation = AnimationCache\getAnimation "#{@id}/#{@defaultMotion}/#{@defaultDirection}"
-    return animation, @isFlipped(@defaultMotion, @defaultDirection) if animation
+    return animation, @isFlipped(@defaultMotion, @defaultDirection), @getSoundFX(motionName, direction) if animation
 
     print "[GamaFigure(#{@id})::findAnimation] no default animation"
-    return nil, false
+    return nil, false, nil
 
   -- play this animation on the given sprite
   -- @param sprite  cc.Sprite
@@ -174,7 +208,7 @@ class GamaFigure
 
     return print "[GamaFigure(#{@id})::playOnceOnSprite] invalid sprit" unless sprite and type(sprite.getScene) == "function"
 
-    animation, isFlipped = @findAnimation motionName, direction
+    animation, isFlipped, soundFx = @findAnimation motionName, direction
 
     unless animation
       print "[GamaFigure(#{@id})::playOnceOnSprite] fail to find animation"
@@ -186,11 +220,20 @@ class GamaFigure
       callback! if type(callback) == "function"
       return
 
+    -- 播放动画
     sprite\setFlippedX isFlipped
     sprite\stopActionByTag TAG_PLAYFRAME_ACTION
-    animate = cc.Animate\create animation
-    animate\setTag TAG_PLAYFRAME_ACTION
-    sprite\runAction(animate)
+    action = cc.Animate\create animation
+    action\setTag TAG_PLAYFRAME_ACTION
+    sprite\runAction(action)
+
+    -- 播放音效
+    sprite\stopActionByTag TAG_SOUND_FX_ACTION
+    if soundFx
+      action = soundFX2Action soundFx
+      if action and action.setTag -- the action looks like an action
+        action\setTag TAG_SOUND_FX_ACTION
+        sprite\runAction(action)
 
     performWithDelay(sprite, callback, animation\getDuration!) if type(callback) == "function"
     return
@@ -207,8 +250,6 @@ class GamaFigure
     unless animation
       print "[GamaFigure(#{@id})::playOnSprite] fail to find animation"
       return
-
-    --console.info "[gama::playOnSprite] animation:#{animation}"
 
     sprite\setFlippedX isFlipped
     sprite\stopActionByTag TAG_PLAYFRAME_ACTION
@@ -852,6 +893,11 @@ Iconpack =
 cleanup = ->
   SpriteFrameCache\removeUnusedSpriteFrames!
   TextureCache\removeUnusedTextures!
+
+  -- unload all played effects
+  for key, value in pairs LOADED_SOUND_EFFECT_FILES do AudioEngine.unloadEffect key
+  LOADED_SOUND_EFFECT_FILES = {}
+
   return
 
 

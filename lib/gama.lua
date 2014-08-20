@@ -1,5 +1,6 @@
 local async = require("async")
 local cjson = require("cjson")
+local AudioEngine = require("AudioEngine")
 print("[gama] init")
 local SpriteFrameCache = cc.SpriteFrameCache:getInstance()
 local TextureCache = cc.Director:getInstance():getTextureCache()
@@ -36,6 +37,7 @@ local EMPTY_TABLE = { }
 local TEXTURE_FIELD_ID_1 = "png_8bit"
 local TEXTURE_FIELD_ID_2 = "jpg"
 local TAG_PLAYFRAME_ACTION = 65535
+local TAG_SOUND_FX_ACTION = 65534
 local SPF = 1 / 20
 local TILE_TEXTURE_RECTS = {
   [1] = cc.rect(0, 0, 256, 256),
@@ -65,6 +67,32 @@ local DIRECTION_TO_FLIPX = {
   w = true,
   nw = true
 }
+local LOADED_SOUND_EFFECT_FILES = { }
+local playSoundFx
+playSoundFx = function(id)
+  local filename = tostring(id) .. ".mp3"
+  LOADED_SOUND_EFFECT_FILES = true
+  AudioEngine.playEffect(filename)
+end
+local soundFX2Action
+soundFX2Action = function(soundFx)
+  if not (type(soundFx) == "table" and #soundFx > 1) then
+    return nil
+  end
+  if #soundFx == 2 and soundFx[1] == 0 then
+    return playSoundFx(soundFx[2])
+  end
+  local sequence = { }
+  local soundFxIds = { }
+  for i = 1, #soundFx, 2 do
+    table.insert(sequence, cc.DelayTime:create(soundFx[i]))
+    table.insert(soundFxIds, soundFx[i + 1])
+    table.insert(sequence, cc.CallFunc:create(function()
+      return playSoundFx(table.remove(soundFxIds, 1))
+    end))
+  end
+  return cc.Sequence:create(unpack(sequence))
+end
 local GamaAnimation
 do
   local _base_0 = {
@@ -128,15 +156,24 @@ do
         return DIRECTION_TO_FLIPX[direction]
       end
     end,
+    getSoundFX = function(self, motionName, direction)
+      if self.soundfxs == nil then
+        return nil
+      end
+      if self.soundfxs[motionName] == nil then
+        return nil
+      end
+      return self.soundfxs[motionName][direction]
+    end,
     findAnimation = function(self, motionName, direction, fallbackToDefaultMotion)
       local animationName = tostring(self.id) .. "/" .. tostring(motionName) .. "/" .. tostring(direction)
       local animation = AnimationCache:getAnimation(animationName)
       if animation then
-        return animation, self:isFlipped(motionName, direction)
+        return animation, self:isFlipped(motionName, direction), self:getSoundFX(motionName, direction)
       end
       animation = AnimationCache:getAnimation(tostring(self.id) .. "/" .. tostring(motionName) .. "/" .. tostring(self.defaultDirection))
       if animation then
-        return animation, self:isFlipped(motionName, self.defaultDirection)
+        return animation, self:isFlipped(motionName, self.defaultDirection), self:getSoundFX(motionName, direction)
       end
       if not (fallbackToDefaultMotion) then
         return 
@@ -144,16 +181,16 @@ do
       print("[GamaFigure(" .. tostring(self.id) .. ")::findAnimation] missing animation for motionName:" .. tostring(motionName) .. ", direction:" .. tostring(direction) .. ", use defaults")
       animation = AnimationCache:getAnimation(tostring(self.id) .. "/" .. tostring(self.defaultMotion) .. "/" .. tostring(self.defaultDirection))
       if animation then
-        return animation, self:isFlipped(self.defaultMotion, self.defaultDirection)
+        return animation, self:isFlipped(self.defaultMotion, self.defaultDirection), self:getSoundFX(motionName, direction)
       end
       print("[GamaFigure(" .. tostring(self.id) .. ")::findAnimation] no default animation")
-      return nil, false
+      return nil, false, nil
     end,
     playOnceOnSprite = function(self, sprite, motionName, direction, callback)
       if not (sprite and type(sprite.getScene) == "function") then
         return print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] invalid sprit")
       end
-      local animation, isFlipped = self:findAnimation(motionName, direction)
+      local animation, isFlipped, soundFx = self:findAnimation(motionName, direction)
       if not (animation) then
         print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] fail to find animation")
         return 
@@ -167,9 +204,17 @@ do
       end
       sprite:setFlippedX(isFlipped)
       sprite:stopActionByTag(TAG_PLAYFRAME_ACTION)
-      local animate = cc.Animate:create(animation)
-      animate:setTag(TAG_PLAYFRAME_ACTION)
-      sprite:runAction(animate)
+      local action = cc.Animate:create(animation)
+      action:setTag(TAG_PLAYFRAME_ACTION)
+      sprite:runAction(action)
+      sprite:stopActionByTag(TAG_SOUND_FX_ACTION)
+      if soundFx then
+        action = soundFX2Action(soundFx)
+        if action and action.setTag then
+          action:setTag(TAG_SOUND_FX_ACTION)
+          sprite:runAction(action)
+        end
+      end
       if type(callback) == "function" then
         performWithDelay(sprite, callback, animation:getDuration())
       end
@@ -792,6 +837,10 @@ Iconpack = {
 cleanup = function()
   SpriteFrameCache:removeUnusedSpriteFrames()
   TextureCache:removeUnusedTextures()
+  for key, value in pairs(LOADED_SOUND_EFFECT_FILES) do
+    AudioEngine.unloadEffect(key)
+  end
+  LOADED_SOUND_EFFECT_FILES = { }
 end
 gama = {
   VERSION = "0.1.0",
