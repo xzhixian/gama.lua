@@ -70,7 +70,6 @@ TILE_TEXTURE_RECTS =
   [16]: cc.rect(768, 768, 256, 256)
 
 
--- TODO: following conts should goes into gama
 DIRECTION_TO_FLIPX =
   n: false
   ne: false
@@ -118,15 +117,12 @@ class GamaFigure
   --                  动作
   --                    方向
   --                      ccAnimation
-  new: (id, data, defaultMotion, defaultDirection)=>
-    assert id, "missing figure id"
-    assert data, "missing figure data"
-    @id = id
-    @data = data
-    @defaultMotion = defaultMotion
-    @defaultDirection = defaultDirection
+  new: (@id, playframes, @mirrors, @soundfxs, @defaultMotion, @defaultDirection)=>
+    assert @id, "missing figure id"
+    assert playframes, "missing figure playframes"
+    --@data = data
     @motions = {}
-    for motionName in pairs data
+    for motionName in pairs playframes
       table.insert @motions, motionName
 
   getId: => @id
@@ -137,6 +133,14 @@ class GamaFigure
 
   getMotions: => @motions
 
+  -- 计算在给定的方向上是否要 x 轴镜像
+  isFlipped: (motion, direction)=>
+    if @mirrors
+      --console.info "[gama::isFlipped] has mirrors: motion:#{motion}, direction:#{direction}"
+      return not not (@mirrors[motion] or EMPTY_TABLE)[direction]
+    else
+      return DIRECTION_TO_FLIPX[direction]
+
   -- 根据动作名字和方向 找到对应的动画
   -- @param motionName
   -- @param direction
@@ -144,20 +148,20 @@ class GamaFigure
   findAnimation: (motionName, direction, fallbackToDefaultMotion)=>
     animationName = "#{@id}/#{motionName}/#{direction}"
     animation = AnimationCache\getAnimation animationName   -- 先到缓存里面找
-    return animation if animation
+    return animation, @isFlipped(motionName, direction) if animation
 
     -- 尝试找当前动作下的默认方向
     animation = AnimationCache\getAnimation "#{@id}/#{motionName}/#{@defaultDirection}"
-    return animation if animation
+    return animation, @isFlipped(motionName, @defaultDirection) if animation
 
     return unless fallbackToDefaultMotion
 
     print "[GamaFigure(#{@id})::findAnimation] missing animation for motionName:#{motionName}, direction:#{direction}, use defaults"
     animation = AnimationCache\getAnimation "#{@id}/#{@defaultMotion}/#{@defaultDirection}"
-    return animation if animation
+    return animation, @isFlipped(@defaultMotion, @defaultDirection) if animation
 
     print "[GamaFigure(#{@id})::findAnimation] no default animation"
-    return nil
+    return nil, false
 
   -- play this animation on the given sprite
   -- @param sprite  cc.Sprite
@@ -166,7 +170,7 @@ class GamaFigure
 
     return print "[GamaFigure(#{@id})::playOnceOnSprite] invalid sprit" unless sprite and type(sprite.getScene) == "function"
 
-    animation = @findAnimation motionName, direction
+    animation, isFlipped = @findAnimation motionName, direction
 
     unless animation
       print "[GamaFigure(#{@id})::playOnceOnSprite] fail to find animation"
@@ -178,7 +182,7 @@ class GamaFigure
       callback! if type(callback) == "function"
       return
 
-    --sprite\cleanup! if sprite\getScene!
+    sprite\setFlippedX isFlipped
     sprite\stopActionByTag TAG_PLAYFRAME_ACTION
     animate = cc.Animate\create animation
     animate\setTag TAG_PLAYFRAME_ACTION
@@ -194,7 +198,7 @@ class GamaFigure
 
     return print "[GamaFigure(#{@id})::playOnceOnSprite] invalid sprit" unless sprite and type(sprite.getScene) == "function"
 
-    animation = @findAnimation motionName, direction, true
+    animation, isFlipped = @findAnimation motionName, direction, true
 
     unless animation
       print "[GamaFigure(#{@id})::playOnSprite] fail to find animation"
@@ -202,7 +206,7 @@ class GamaFigure
 
     --console.info "[gama::playOnSprite] animation:#{animation}"
 
-    --sprite\cleanup! if sprite\getScene!
+    sprite\setFlippedX isFlipped
     sprite\stopActionByTag TAG_PLAYFRAME_ACTION
     animate = cc.Animate\create animation
     action = cc.RepeatForever\create(animate)
@@ -538,6 +542,9 @@ Animation =
 
     id = data.id
 
+    spf = SPF
+    spf = data.spf if type(data.spf) == "number" and data.spf > 0
+
     -- 根据 json 准备好 texture2D 实例
     texture2D.getFromJSON data, (err, texture2Ds)->
       return callback err if err
@@ -550,7 +557,7 @@ Animation =
         defaultFrame = assetFrames["#{id}/1"]
         for assetId in *data.playframes
           table.insert(playframes, (assetFrames["#{id}/#{assetId + 1}"] or defaultFrame))
-        ani = cc.Animation\createWithSpriteFrames(playframes, SPF)
+        ani = cc.Animation\createWithSpriteFrames(playframes, spf)
         AnimationCache\addAnimation(ani, id)  -- 加入到缓存，避免再次计算
 
       gamaAnimation = GamaAnimation(id, ani)
@@ -608,6 +615,9 @@ Figure =
         arrangement = data.atlas[i].arrangment
         texture2D.makeSpriteFrames(id, texture, arrangement, assetFrames)
 
+      spf = SPF
+      spf = data.spf if type(data.spf) == "number" and data.spf > 0
+
       for motionName, directionSet in pairs data.playframes       -- 遍历动作
         for direction, assetFrameIds in pairs directionSet        -- 遍历每个动作的方向
           animationName = "#{id}/#{motionName}/#{direction}"
@@ -625,11 +635,11 @@ Figure =
               assetFrame = assetFrames["#{id}/#{assetId}"]
               table.insert(playframes, assetFrame) if assetFrame
 
-            animation = cc.Animation\createWithSpriteFrames(playframes, SPF)
+            animation = cc.Animation\createWithSpriteFrames(playframes, spf)
             AnimationCache\addAnimation(animation, animationName)  -- 加入到缓存，避免再次计算
             directionSet[direction] = animation
 
-      instance = GamaFigure(id, data.playframes)
+      instance = GamaFigure(id, data.playframes, data.flipx, data.soundeffects)
       callback nil, instance
 
     return

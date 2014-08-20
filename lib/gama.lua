@@ -121,15 +121,22 @@ do
     getMotions = function(self)
       return self.motions
     end,
+    isFlipped = function(self, motion, direction)
+      if self.mirrors then
+        return not not (self.mirrors[motion] or EMPTY_TABLE)[direction]
+      else
+        return DIRECTION_TO_FLIPX[direction]
+      end
+    end,
     findAnimation = function(self, motionName, direction, fallbackToDefaultMotion)
       local animationName = tostring(self.id) .. "/" .. tostring(motionName) .. "/" .. tostring(direction)
       local animation = AnimationCache:getAnimation(animationName)
       if animation then
-        return animation
+        return animation, self:isFlipped(motionName, direction)
       end
       animation = AnimationCache:getAnimation(tostring(self.id) .. "/" .. tostring(motionName) .. "/" .. tostring(self.defaultDirection))
       if animation then
-        return animation
+        return animation, self:isFlipped(motionName, self.defaultDirection)
       end
       if not (fallbackToDefaultMotion) then
         return 
@@ -137,16 +144,16 @@ do
       print("[GamaFigure(" .. tostring(self.id) .. ")::findAnimation] missing animation for motionName:" .. tostring(motionName) .. ", direction:" .. tostring(direction) .. ", use defaults")
       animation = AnimationCache:getAnimation(tostring(self.id) .. "/" .. tostring(self.defaultMotion) .. "/" .. tostring(self.defaultDirection))
       if animation then
-        return animation
+        return animation, self:isFlipped(self.defaultMotion, self.defaultDirection)
       end
       print("[GamaFigure(" .. tostring(self.id) .. ")::findAnimation] no default animation")
-      return nil
+      return nil, false
     end,
     playOnceOnSprite = function(self, sprite, motionName, direction, callback)
       if not (sprite and type(sprite.getScene) == "function") then
         return print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] invalid sprit")
       end
-      local animation = self:findAnimation(motionName, direction)
+      local animation, isFlipped = self:findAnimation(motionName, direction)
       if not (animation) then
         print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] fail to find animation")
         return 
@@ -158,6 +165,7 @@ do
         end
         return 
       end
+      sprite:setFlippedX(isFlipped)
       sprite:stopActionByTag(TAG_PLAYFRAME_ACTION)
       local animate = cc.Animate:create(animation)
       animate:setTag(TAG_PLAYFRAME_ACTION)
@@ -170,11 +178,12 @@ do
       if not (sprite and type(sprite.getScene) == "function") then
         return print("[GamaFigure(" .. tostring(self.id) .. ")::playOnceOnSprite] invalid sprit")
       end
-      local animation = self:findAnimation(motionName, direction, true)
+      local animation, isFlipped = self:findAnimation(motionName, direction, true)
       if not (animation) then
         print("[GamaFigure(" .. tostring(self.id) .. ")::playOnSprite] fail to find animation")
         return 
       end
+      sprite:setFlippedX(isFlipped)
       sprite:stopActionByTag(TAG_PLAYFRAME_ACTION)
       local animate = cc.Animate:create(animation)
       local action = cc.RepeatForever:create(animate)
@@ -184,15 +193,12 @@ do
   }
   _base_0.__index = _base_0
   local _class_0 = setmetatable({
-    __init = function(self, id, data, defaultMotion, defaultDirection)
-      assert(id, "missing figure id")
-      assert(data, "missing figure data")
-      self.id = id
-      self.data = data
-      self.defaultMotion = defaultMotion
-      self.defaultDirection = defaultDirection
+    __init = function(self, id, playframes, mirrors, soundfxs, defaultMotion, defaultDirection)
+      self.id, self.mirrors, self.soundfxs, self.defaultMotion, self.defaultDirection = id, mirrors, soundfxs, defaultMotion, defaultDirection
+      assert(self.id, "missing figure id")
+      assert(playframes, "missing figure playframes")
       self.motions = { }
-      for motionName in pairs(data) do
+      for motionName in pairs(playframes) do
         table.insert(self.motions, motionName)
       end
     end,
@@ -515,6 +521,10 @@ Animation = {
       return callback("invalid csx json data")
     end
     local id = data.id
+    local spf = SPF
+    if type(data.spf) == "number" and data.spf > 0 then
+      spf = data.spf
+    end
     texture2D.getFromJSON(data, function(err, texture2Ds)
       if err then
         return callback(err)
@@ -529,7 +539,7 @@ Animation = {
           local assetId = _list_0[_index_0]
           table.insert(playframes, (assetFrames[tostring(id) .. "/" .. tostring(assetId + 1)] or defaultFrame))
         end
-        ani = cc.Animation:createWithSpriteFrames(playframes, SPF)
+        ani = cc.Animation:createWithSpriteFrames(playframes, spf)
         AnimationCache:addAnimation(ani, id)
       end
       local gamaAnimation = GamaAnimation(id, ani)
@@ -575,6 +585,10 @@ Figure = {
         local arrangement = data.atlas[i].arrangment
         texture2D.makeSpriteFrames(id, texture, arrangement, assetFrames)
       end
+      local spf = SPF
+      if type(data.spf) == "number" and data.spf > 0 then
+        spf = data.spf
+      end
       for motionName, directionSet in pairs(data.playframes) do
         for direction, assetFrameIds in pairs(directionSet) do
           local animationName = tostring(id) .. "/" .. tostring(motionName) .. "/" .. tostring(direction)
@@ -590,13 +604,13 @@ Figure = {
                 table.insert(playframes, assetFrame)
               end
             end
-            animation = cc.Animation:createWithSpriteFrames(playframes, SPF)
+            animation = cc.Animation:createWithSpriteFrames(playframes, spf)
             AnimationCache:addAnimation(animation, animationName)
             directionSet[direction] = animation
           end
         end
       end
-      local instance = GamaFigure(id, data.playframes)
+      local instance = GamaFigure(id, data.playframes, data.flipx, data.soundeffects)
       return callback(nil, instance)
     end)
   end
