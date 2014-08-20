@@ -201,6 +201,8 @@ do
       for motionName in pairs(playframes) do
         table.insert(self.motions, motionName)
       end
+      console.info("[gama::new] soundfxs")
+      console.dir(self.soundfxs)
     end,
     __base = _base_0,
     __name = "GamaFigure"
@@ -388,7 +390,7 @@ do
   _base_0.__class = _class_0
   GamaIconPack = _class_0
 end
-local readJSON, readJSONAsync, getTypeById, loadById, texture2D, Animation, Figure, Tilemap, Scene, Iconpack, gama
+local readJSON, readJSONAsync, getTypeById, loadById, texture2D, Animation, Figure, Tilemap, Scene, Iconpack, cleanup, gama, proxy
 readJSON = function(id)
   local path = tostring(id) .. ".csx"
   print("[gama::readJSON] path:" .. tostring(path))
@@ -656,10 +658,6 @@ Scene = {
       print("ERROR: [gama::scene::loadById::on job] unknown asset type:" .. tostring(jobType))
     end
   end,
-  cleanup = function()
-    SpriteFrameCache:removeUnusedSpriteFrames()
-    TextureCache:removeUnusedTextures()
-  end,
   loadById = function(id, callback)
     assert(id, "missing scene id")
     assert(type(callback) == "function", "invalid callback")
@@ -791,12 +789,17 @@ Iconpack = {
     end)
   end
 }
+cleanup = function()
+  SpriteFrameCache:removeUnusedSpriteFrames()
+  TextureCache:removeUnusedTextures()
+end
 gama = {
   VERSION = "0.1.0",
   readJSONAsync = readJSONAsync,
   readJSON = readJSON,
   getTypeById = getTypeById,
   loadById = loadById,
+  cleanup = cleanup,
   animation = Animation,
   figure = Figure,
   tilemap = Tilemap,
@@ -808,4 +811,11 @@ gama = {
   TYPE_SCENE = TYPE_SCENE,
   TYPE_ICONPACK = TYPE_ICONPACK
 }
-return gama
+proxy = { }
+setmetatable(proxy, {
+  __index = gama,
+  __newindex = function(t, k, v)
+    return print("attemp to update a read-only table")
+  end
+})
+return proxy

@@ -120,10 +120,14 @@ class GamaFigure
   new: (@id, playframes, @mirrors, @soundfxs, @defaultMotion, @defaultDirection)=>
     assert @id, "missing figure id"
     assert playframes, "missing figure playframes"
-    --@data = data
+
     @motions = {}
-    for motionName in pairs playframes
-      table.insert @motions, motionName
+    for motionName in pairs playframes do table.insert @motions, motionName
+
+    console.info "[gama::new] soundfxs"
+    console.dir @soundfxs
+
+    return
 
   getId: => @id
 
@@ -700,12 +704,6 @@ Scene =
 
     return
 
-
-  cleanup:  ->
-    SpriteFrameCache\removeUnusedSpriteFrames!
-    TextureCache\removeUnusedTextures!
-    return
-
   -- callback signature: callback(err, sceneDataPack)
   --  其中 sceneDataPack 是一个数组，内涵： 1. sceneData, 2. tilemap, ...
   loadById: (id, callback)->
@@ -851,6 +849,12 @@ Iconpack =
     return
 
 
+cleanup = ->
+  SpriteFrameCache\removeUnusedSpriteFrames!
+  TextureCache\removeUnusedTextures!
+  return
+
+
 gama =
   VERSION:  "0.1.0"
 
@@ -858,6 +862,7 @@ gama =
   :readJSON
   :getTypeById
   :loadById
+  :cleanup
 
   animation: Animation
   figure: Figure
@@ -871,7 +876,12 @@ gama =
   :TYPE_SCENE
   :TYPE_ICONPACK
 
+-- sealed
+proxy = {}
+setmetatable proxy,
+  __index: gama
+  __newindex: (t ,k ,v)-> print "attemp to update a read-only table"
 
-return gama
+return proxy
 
 
