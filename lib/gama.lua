@@ -71,7 +71,7 @@ local LOADED_SOUND_EFFECT_FILES = { }
 local playSoundFx
 playSoundFx = function(id)
   local filename = tostring(id) .. ".mp3"
-  LOADED_SOUND_EFFECT_FILES = true
+  LOADED_SOUND_EFFECT_FILES[filename] = true
   AudioEngine.playEffect(filename)
 end
 local soundFX2Action
@@ -246,8 +246,6 @@ do
       for motionName in pairs(playframes) do
         table.insert(self.motions, motionName)
       end
-      console.info("[gama::new] soundfxs")
-      console.dir(self.soundfxs)
     end,
     __base = _base_0,
     __name = "GamaFigure"

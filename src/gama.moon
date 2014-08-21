@@ -88,7 +88,7 @@ LOADED_SOUND_EFFECT_FILES = {}
 
 playSoundFx = (id)->
   filename = "#{id}.mp3"
-  LOADED_SOUND_EFFECT_FILES = true
+  LOADED_SOUND_EFFECT_FILES[filename] = true
   AudioEngine.playEffect filename
   return
 
@@ -153,8 +153,8 @@ class GamaFigure
     @motions = {}
     for motionName in pairs playframes do table.insert @motions, motionName
 
-    console.info "[gama::new] soundfxs"
-    console.dir @soundfxs
+    --console.info "[gama::new] soundfxs"
+    --console.dir @soundfxs
 
     return
 
