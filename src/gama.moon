@@ -785,7 +785,7 @@ Scene =
       bitValue = bit.rshift(byte, brickN % 32)
       return (bitValue % 2) == 1
 
-    sceneData.isMaskedAt = (brickX, brickY)=>
+    sceneData.isMaskedAt = (pixelX, pixelY)=>
       @isMaskedAtBrick(math.floor(pixelX / @brickUnitWidth), math.floor(pixelY / @brickUnitHeight))
 
     sceneData.isMaskedAtBrick = (brickX, brickY)=>

@@ -730,7 +730,7 @@ Scene = {
       local bitValue = bit.rshift(byte, brickN % 32)
       return (bitValue % 2) == 1
     end
-    sceneData.isMaskedAt = function(self, brickX, brickY)
+    sceneData.isMaskedAt = function(self, pixelX, pixelY)
       return self:isMaskedAtBrick(math.floor(pixelX / self.brickUnitWidth), math.floor(pixelY / self.brickUnitHeight))
     end
     sceneData.isMaskedAtBrick = function(self, brickX, brickY)
