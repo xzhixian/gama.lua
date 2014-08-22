@@ -111,15 +111,26 @@ do
       local action = cc.RepeatForever:create(animate)
       action:setTag(TAG_PLAYFRAME_ACTION)
       sprite:runAction(action)
+    end,
+    playOnceOnSprite = function(self, sprite)
+      sprite:stopActionByTag(TAG_PLAYFRAME_ACTION)
+      local action = cc.Animate:create(self.ccAnimation)
+      action:setTag(TAG_PLAYFRAME_ACTION)
+      sprite:runAction(action)
+      sprite:stopActionByTag(TAG_SOUND_FX_ACTION)
+      if self.soundfxs then
+        action = soundFX2Action(self.soundfxs)
+        if action and action.setTag then
+          action:setTag(TAG_SOUND_FX_ACTION)
+          sprite:runAction(action)
+        end
+      end
     end
   }
   _base_0.__index = _base_0
   local _class_0 = setmetatable({
-    __init = function(self, id, ccAnimation)
-      assert(id, "missing animation id")
-      assert(ccAnimation, "missing ccAnimation")
-      self.id = id
-      self.ccAnimation = ccAnimation
+    __init = function(self, id, ccAnimation, soundfxs)
+      self.id, self.ccAnimation, self.soundfxs = id, ccAnimation, soundfxs
     end,
     __base = _base_0,
     __name = "GamaAnimation"
@@ -587,7 +598,7 @@ Animation = {
         ani = cc.Animation:createWithSpriteFrames(playframes, spf)
         AnimationCache:addAnimation(ani, id)
       end
-      local gamaAnimation = GamaAnimation(id, ani)
+      local gamaAnimation = GamaAnimation(id, ani, data.soundeffects)
       return callback(nil, gamaAnimation)
     end)
   end,

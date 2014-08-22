@@ -115,11 +115,7 @@ soundFX2Action = (soundFx)->
 class GamaAnimation
   -- 构造函数
   -- @param ccAnimation cc.Animation
-  new: (id, ccAnimation)=>
-    assert id, "missing animation id"
-    assert ccAnimation, "missing ccAnimation"
-    @id = id
-    @ccAnimation = ccAnimation
+  new: (@id, @ccAnimation, @soundfxs)=>
 
   retain: => @ccAnimation\retain!
 
@@ -136,6 +132,22 @@ class GamaAnimation
     action = cc.RepeatForever\create(animate)
     action\setTag TAG_PLAYFRAME_ACTION
     sprite\runAction(action)
+    return
+
+  playOnceOnSprite: (sprite)=>
+    sprite\stopActionByTag TAG_PLAYFRAME_ACTION
+    action = cc.Animate\create @ccAnimation
+    action\setTag TAG_PLAYFRAME_ACTION
+    sprite\runAction(action)
+
+    -- 播放音效
+    sprite\stopActionByTag TAG_SOUND_FX_ACTION
+    if @soundfxs
+      action = soundFX2Action @soundfxs
+      if action and action.setTag -- the action looks like an action
+        action\setTag TAG_SOUND_FX_ACTION
+        sprite\runAction(action)
+
     return
 
 -- 动作造型
@@ -605,7 +617,7 @@ Animation =
         ani = cc.Animation\createWithSpriteFrames(playframes, spf)
         AnimationCache\addAnimation(ani, id)  -- 加入到缓存，避免再次计算
 
-      gamaAnimation = GamaAnimation(id, ani)
+      gamaAnimation = GamaAnimation(id, ani, data.soundeffects)
 
       callback nil, gamaAnimation
 
