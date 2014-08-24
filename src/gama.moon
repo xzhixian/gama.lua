@@ -599,14 +599,18 @@ Animation =
 
     id = data.id
 
+    ani = AnimationCache\getAnimation id   -- 先到缓存里面找
+
+    if ani
+      console.info "[gama::getByCSX] find ani:#{id} in cache"
+      return callback nil, GamaAnimation(id, ani, data.soundeffects)
+
     spf = SPF
     spf = data.spf if type(data.spf) == "number" and data.spf > 0
 
     -- 根据 json 准备好 texture2D 实例
     texture2D.getFromJSON data, (err, texture2Ds)->
       return callback err if err
-
-      ani = AnimationCache\getAnimation id   -- 先到缓存里面找
 
       unless ani
         assetFrames = texture2D.makeSpriteFrames(id, texture2Ds[1], data.atlas)

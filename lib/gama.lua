@@ -577,6 +577,11 @@ Animation = {
       return callback("invalid csx json data")
     end
     local id = data.id
+    local ani = AnimationCache:getAnimation(id)
+    if ani then
+      console.info("[gama::getByCSX] find ani:" .. tostring(id) .. " in cache")
+      return callback(nil, GamaAnimation(id, ani, data.soundeffects))
+    end
     local spf = SPF
     if type(data.spf) == "number" and data.spf > 0 then
       spf = data.spf
@@ -585,7 +590,6 @@ Animation = {
       if err then
         return callback(err)
       end
-      local ani = AnimationCache:getAnimation(id)
       if not (ani) then
         local assetFrames = texture2D.makeSpriteFrames(id, texture2Ds[1], data.atlas)
         local playframes = { }
