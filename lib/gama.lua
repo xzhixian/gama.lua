@@ -112,6 +112,36 @@ do
       action:setTag(TAG_PLAYFRAME_ACTION)
       sprite:runAction(action)
     end,
+    playOnSpriteWithInterval = function(self, sprite, interval, intervalVariance, onEnd)
+      if intervalVariance == nil then
+        intervalVariance = 0
+      end
+      if not (type(interval) == "number" and interval > 0) then
+        return playOnceOnSprite(sprite)
+      end
+      sprite:stopActionByTag(TAG_PLAYFRAME_ACTION)
+      local delay
+      if intervalVariance > 0 then
+        delay = interval + math.random(intervalVariance)
+      end
+      local sequence = {
+        cc.Animate:create(self.ccAnimation)
+      }
+      if type(onEnd) == "function" then
+        table.insert(sequence, cc.CallFunc:create(function()
+          return onEnd()
+        end))
+      end
+      table.insert(sequence, cc.ToggleVisibility:create())
+      table.insert(sequence, cc.DelayTime:create(delay))
+      table.insert(sequence, cc.ToggleVisibility:create())
+      table.insert(sequence, cc.CallFunc:create(function()
+        return self:playOnSpriteWithInterval(sprite, interval, intervalVariance, onEnd)
+      end))
+      local action = cc.Sequence:create(sequence)
+      action:setTag(TAG_PLAYFRAME_ACTION)
+      sprite:runAction(action)
+    end,
     playOnceOnSprite = function(self, sprite)
       sprite:stopActionByTag(TAG_PLAYFRAME_ACTION)
       local action = cc.Animate:create(self.ccAnimation)
