@@ -871,7 +871,11 @@ gama = {
   TYPE_FIGURE = TYPE_FIGURE,
   TYPE_TILEMAP = TYPE_TILEMAP,
   TYPE_SCENE = TYPE_SCENE,
-  TYPE_ICONPACK = TYPE_ICONPACK
+  TYPE_ICONPACK = TYPE_ICONPACK,
+  GamaAnimation = GamaAnimation,
+  GamaFigure = GamaFigure,
+  GamaTilemap = GamaTilemap,
+  GamaIconPack = GamaIconPack
 }
 proxy = { }
 setmetatable(proxy, {

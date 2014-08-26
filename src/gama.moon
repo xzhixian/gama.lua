@@ -937,6 +937,10 @@ gama =
   :TYPE_TILEMAP
   :TYPE_SCENE
   :TYPE_ICONPACK
+  :GamaAnimation
+  :GamaFigure
+  :GamaTilemap
+  :GamaIconPack
 
 -- sealed
 proxy = {}
