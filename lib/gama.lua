@@ -153,6 +153,20 @@ do
           sprite:runAction(action)
         end
       end
+    end,
+    playOnceInContainer = function(self, container)
+      assert(container and container.addChild)
+      local node = cc.Sprite:create()
+      local action = cc.Animate:create(self.ccAnimation)
+      action = cc.Sequence:create(action, cc.RemoveSelf:create())
+      node:runAction(action)
+      container:addChild(node)
+      if self.soundfxs then
+        action = soundFX2Action(self.soundfxs)
+        if action and action.setTag then
+          node:runAction(action)
+        end
+      end
     end
   }
   _base_0.__index = _base_0

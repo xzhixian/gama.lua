@@ -163,7 +163,21 @@ class GamaAnimation
       if action and action.setTag -- the action looks like an action
         action\setTag TAG_SOUND_FX_ACTION
         sprite\runAction(action)
+    return
 
+  playOnceInContainer: (container)=>
+    assert container and container.addChild
+
+    node = cc.Sprite\create!
+    action = cc.Animate\create @ccAnimation
+    action = cc.Sequence\create(action, cc.RemoveSelf\create!)
+    node\runAction action
+    container\addChild node
+
+    -- 播放音效
+    if @soundfxs
+      action = soundFX2Action @soundfxs
+      node\runAction(action) if action and action.setTag -- the action looks like an action
     return
 
 -- 动作造型
