@@ -139,7 +139,7 @@ class GamaAnimation
     sprite\stopActionByTag TAG_PLAYFRAME_ACTION
     delay = interval + math.random(intervalVariance) if intervalVariance > 0
     sequence = {cc.Animate\create(@ccAnimation)}
-    table.insert(sequence, cc.CallFunc\create(callbackWhenEachEnd) if type(callbackWhenEachEnd) == "function"
+    table.insert(sequence, cc.CallFunc\create(callbackWhenEachEnd)) if type(callbackWhenEachEnd) == "function"
     table.insert(sequence, cc.ToggleVisibility\create!)  -- hide when sleep
     table.insert(sequence, cc.DelayTime\create(delay))
     table.insert(sequence, cc.ToggleVisibility\create!)

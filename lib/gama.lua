@@ -112,7 +112,7 @@ do
       action:setTag(TAG_PLAYFRAME_ACTION)
       sprite:runAction(action)
     end,
-    playOnSpriteWithInterval = function(self, sprite, interval, intervalVariance, onEnd)
+    playOnSpriteWithInterval = function(self, sprite, interval, intervalVariance, callbackWhenEachEnd)
       if intervalVariance == nil then
         intervalVariance = 0
       end
@@ -127,16 +127,14 @@ do
       local sequence = {
         cc.Animate:create(self.ccAnimation)
       }
-      if type(onEnd) == "function" then
-        table.insert(sequence, cc.CallFunc:create(function()
-          return onEnd()
-        end))
+      if type(callbackWhenEachEnd) == "function" then
+        table.insert(sequence, cc.CallFunc:create(callbackWhenEachEnd))
       end
       table.insert(sequence, cc.ToggleVisibility:create())
       table.insert(sequence, cc.DelayTime:create(delay))
       table.insert(sequence, cc.ToggleVisibility:create())
       table.insert(sequence, cc.CallFunc:create(function()
-        return self:playOnSpriteWithInterval(sprite, interval, intervalVariance, onEnd)
+        return self:playOnSpriteWithInterval(sprite, interval, intervalVariance, callbackWhenEachEnd)
       end))
       local action = cc.Sequence:create(sequence)
       action:setTag(TAG_PLAYFRAME_ACTION)
