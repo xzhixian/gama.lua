@@ -103,7 +103,7 @@ do
       return self.ccAnimation:release()
     end,
     playOnSprite = function(self, sprite)
-      if not (sprite and type(sprite.getScene) == "function") then
+      if not (sprite and type(sprite.runAction) == "function") then
         return print("[GamaAnimation(" .. tostring(self.id) .. ")::playOnSprite] invalid sprit")
       end
       sprite:stopActionByTag(TAG_PLAYFRAME_ACTION)

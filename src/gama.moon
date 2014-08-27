@@ -124,7 +124,7 @@ class GamaAnimation
   -- play this animation on the given sprite
   -- @param sprite  cc.Sprite
   playOnSprite: (sprite)=>
-    return print "[GamaAnimation(#{@id})::playOnSprite] invalid sprit" unless sprite and type(sprite.getScene) == "function"
+    return print "[GamaAnimation(#{@id})::playOnSprite] invalid sprit" unless sprite and type(sprite.runAction) == "function"
 
     --sprite\cleanup! if sprite\getScene!
     sprite\stopActionByTag TAG_PLAYFRAME_ACTION
