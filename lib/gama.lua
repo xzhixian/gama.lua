@@ -167,6 +167,15 @@ do
           node:runAction(action)
         end
       end
+    end,
+    drawSingleFrame = function(self, frameId)
+      local aniFrames = self.ccAnimation:getFrames()
+      if frameId > #aniFrames then
+        print("[gama::drawSingleFrame] ERROR: frameId:" .. tostring(frameId) .. " overflow. total frame count:" .. tostring(#aniFrames))
+        return nil
+      end
+      local spriteFrame = aniFrames[frameId]:getSpriteFrame()
+      return cc.Sprite:createWithSpriteFrame(spriteFrame)
     end
   }
   _base_0.__index = _base_0

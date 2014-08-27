@@ -180,6 +180,16 @@ class GamaAnimation
       node\runAction(action) if action and action.setTag -- the action looks like an action
     return
 
+  drawSingleFrame: (frameId)=>
+    aniFrames = @ccAnimation\getFrames!
+    if frameId > #aniFrames
+      print "[gama::drawSingleFrame] ERROR: frameId:#{frameId} overflow. total frame count:#{#aniFrames}"
+      return nil
+
+    spriteFrame = aniFrames[frameId]\getSpriteFrame!
+    return cc.Sprite\createWithSpriteFrame(spriteFrame)
+
+
 -- 动作造型
 class GamaFigure
 
