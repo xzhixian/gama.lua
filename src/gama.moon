@@ -116,10 +116,15 @@ class GamaAnimation
   -- 构造函数
   -- @param ccAnimation cc.Animation
   new: (@id, @ccAnimation, @soundfxs)=>
+    duration = #@ccAnimation\getFrames! / 24
 
   retain: => @ccAnimation\retain!
 
   release: => @ccAnimation\release!
+
+  getDuration: => @ccAnimation\getDuration!
+    --console.info "[gama::getDuration] message:#{@ccAnimation\getDuration!}, duration:#{duration}"
+    --return @ccAnimation\getDuration!
 
   -- play this animation on the given sprite
   -- @param sprite  cc.Sprite
@@ -165,10 +170,11 @@ class GamaAnimation
         sprite\runAction(action)
     return
 
-  playOnceInContainer: (container)=>
+  playOnceInContainer: (container, flipX = false)=>
     assert container and container.addChild
 
     node = cc.Sprite\create!
+    node\setFlippedX flipX
     action = cc.Animate\create @ccAnimation
     action = cc.Sequence\create(action, cc.RemoveSelf\create!)
     node\runAction action

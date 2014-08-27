@@ -102,6 +102,9 @@ do
     release = function(self)
       return self.ccAnimation:release()
     end,
+    getDuration = function(self)
+      return self.ccAnimation:getDuration()
+    end,
     playOnSprite = function(self, sprite)
       if not (sprite and type(sprite.runAction) == "function") then
         return print("[GamaAnimation(" .. tostring(self.id) .. ")::playOnSprite] invalid sprit")
@@ -154,9 +157,13 @@ do
         end
       end
     end,
-    playOnceInContainer = function(self, container)
+    playOnceInContainer = function(self, container, flipX)
+      if flipX == nil then
+        flipX = false
+      end
       assert(container and container.addChild)
       local node = cc.Sprite:create()
+      node:setFlippedX(flipX)
       local action = cc.Animate:create(self.ccAnimation)
       action = cc.Sequence:create(action, cc.RemoveSelf:create())
       node:runAction(action)
@@ -182,6 +189,7 @@ do
   local _class_0 = setmetatable({
     __init = function(self, id, ccAnimation, soundfxs)
       self.id, self.ccAnimation, self.soundfxs = id, ccAnimation, soundfxs
+      local duration = #self.ccAnimation:getFrames() / 24
     end,
     __base = _base_0,
     __name = "GamaAnimation"
