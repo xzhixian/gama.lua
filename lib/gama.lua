@@ -96,6 +96,9 @@ end
 local GamaAnimation
 do
   local _base_0 = {
+    __tostring = function(self)
+      return "[GamaAnimation " .. tostring(self.id) .. "]"
+    end,
     retain = function(self)
       return self.ccAnimation:retain()
     end,
@@ -199,6 +202,9 @@ end
 local GamaFigure
 do
   local _base_0 = {
+    __tostring = function(self)
+      return "[GamaFigure " .. tostring(self.id) .. "]"
+    end,
     getId = function(self)
       return self.id
     end,
@@ -325,6 +331,9 @@ end
 local GamaTilemap
 do
   local _base_0 = {
+    __tostring = function(self)
+      return "[GamaTilemap " .. tostring(self.id) .. "]"
+    end,
     addOrnament = function(self, gamaAnimation, x, y, flipX)
       if not (self.container) then
         print("[GamaTilemap::addOrnament] invalide container")
@@ -446,6 +455,9 @@ end
 local GamaIconPack
 do
   local _base_0 = {
+    __tostring = function(self)
+      return "[GamaIconPack " .. tostring(self.id) .. "]"
+    end,
     retain = function(self)
       for key, spriteFrame in pairs(self.icons) do
         spriteFrame:retain()
@@ -879,7 +891,6 @@ Iconpack = {
     end)
   end,
   getByCSX = function(csxData, callback)
-    print("[gama::iconpack::getByCSX]")
     assert(type(callback) == "function", "invalid callback")
     if not (csxData and csxData.type == "iconpacks") then
       return callback("invalid csx json data")

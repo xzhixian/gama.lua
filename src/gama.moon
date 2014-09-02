@@ -117,6 +117,8 @@ class GamaAnimation
   -- @param ccAnimation cc.Animation
   new: (@id, @ccAnimation, @soundfxs)=>
 
+  __tostring: => "[GamaAnimation #{@id}]"
+
   retain: => @ccAnimation\retain!
 
   release: => @ccAnimation\release!
@@ -209,6 +211,8 @@ class GamaFigure
     --console.dir @soundfxs
 
     return
+
+  __tostring: => "[GamaFigure #{@id}]"
 
   getId: => @id
 
@@ -346,6 +350,7 @@ class GamaTilemap
     @centerY = 0
 
 
+  __tostring: => "[GamaTilemap #{@id}]"
 
   -- 在场景中添加底层装饰物
   addOrnament: (gamaAnimation, x, y, flipX)=>
@@ -444,6 +449,8 @@ class GamaIconPack
       frameKey = "#{@id}/#{key}"
       @icons[key] = assetFrames[frameKey] if assetFrames[frameKey]
     return
+
+  __tostring: => "[GamaIconPack #{@id}]"
 
   retain: =>
     for key, spriteFrame in pairs @icons
@@ -923,7 +930,7 @@ Iconpack =
 
   -- @param {table} data, csx json data
   getByCSX: (csxData, callback)->
-    print "[gama::iconpack::getByCSX]"
+    --print "[gama::iconpack::getByCSX]"
 
     assert type(callback) == "function", "invalid callback"
 
