@@ -477,7 +477,7 @@ do
       end
     end,
     drawOnSprite = function(self, sprite, key)
-      assert(sprite, "invalid sprite:" .. tostring(sprite))
+      assert(sprite and type(sprite.setSpriteFrame) == "function", "invalid sprite:" .. tostring(sprite))
       local icon = self.icons[tostring(key)]
       if not (icon) then
         return print("[GamaIconPack(" .. tostring(self.id) .. ")::drawOnSprite] missing icon for " .. tostring(key))

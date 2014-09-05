@@ -468,8 +468,9 @@ class GamaIconPack
 
 
   drawOnSprite: (sprite, key)=>
-    assert sprite, "invalid sprite:#{sprite}"
+    assert sprite and type(sprite.setSpriteFrame) == "function" , "invalid sprite:#{sprite}"
     icon = @icons[tostring(key)]
+    --console.info "[gama::drawOnSprite] key:#{key}, icon:#{icon}"
     return print "[GamaIconPack(#{@id})::drawOnSprite] missing icon for #{key}" unless icon
     sprite\setSpriteFrame icon
     return
