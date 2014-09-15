@@ -656,7 +656,7 @@ Animation =
     ani = AnimationCache\getAnimation id   -- 先到缓存里面找
 
     if ani
-      console.info "[gama::getByCSX] find ani:#{id} in cache"
+      --console.info "[gama::getByCSX] find ani:#{id} in cache"
       return callback nil, GamaAnimation(id, ani, data.soundeffects)
 
     spf = SPF

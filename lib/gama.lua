@@ -650,7 +650,6 @@ Animation = {
     local id = data.id
     local ani = AnimationCache:getAnimation(id)
     if ani then
-      console.info("[gama::getByCSX] find ani:" .. tostring(id) .. " in cache")
       return callback(nil, GamaAnimation(id, ani, data.soundeffects))
     end
     local spf = SPF
