@@ -7,8 +7,8 @@ A lua module for using Gama assets directly in Cocos2d-x game engine.
 
 ## API 文档
 
-```
-▼ GamaAnimation : Class
+```lua
+▼ GamaAnimation : Class                           -- 由 gama.lua 生成的类，用于表达一个 动画 对象
     __tostring : function
     drawSingleFrame : function
     getDuration : function
@@ -20,7 +20,7 @@ A lua module for using Gama assets directly in Cocos2d-x game engine.
     release : function
     retain : function
 
-▼ GamaFigure : Class
+▼ GamaFigure : Class                              -- 由 gama.lua 生成的类，用于表达一个 动作造型 对象
     __tostring : function
     findAnimation : function
     getId : function
@@ -33,14 +33,14 @@ A lua module for using Gama assets directly in Cocos2d-x game engine.
     setDefaultDirection : function
     setDefaultMotion : function
 
-▼ GamaIconPack : Class
+▼ GamaIconPack : Class                            -- 由 gama.lua 生成的类，用于表达一个 图片集合 对象
     __tostring : function
     drawOnSprite : function
     new : function
     release : function
     retain : function
 
-▼ GamaTilemap : Class
+▼ GamaTilemap : Class                             -- 由 gama.lua 生成的类，用于表达一个 瓦片地图 对象
     __tostring : function
     addOrnament : function
     bindToSprite : function
@@ -51,48 +51,35 @@ A lua module for using Gama assets directly in Cocos2d-x game engine.
     uiCordToVertexCord : function
     updateContainerPosition : function
 
-▼ gama.animation : object
+▼ gama.animation : object                         -- 载入 gama 动画素材的方法集合
     getByCSX : function
     getById : function
 
-▼ gama.figure : object
+▼ gama.figure : object                            -- 载入 gama 动作造型 素材的方法集合
     getByCSX : function
     getByCharacterId : function
     getById : function
 
-▼ gama.iconpack* : object
+▼ gama.iconpack : object                          -- 载入 gama 图片集合 素材的方法集合
     getByCSX : function
     getById : function
 
-▼ gama.scene : object
+▼ gama.scene : object                             -- 载入 gama 场景 素材的方法集合
   ▼ getByCSX : function
       isMaskedAt : function
       isMaskedAtBrick : function
       isWalkableAt : function
       isWalkableAtBrick : function
-    jobProcessor : function
     loadById : function
 
-▼ gama.tilemap* : object
+▼ gama.tilemap : object                           -- 载入 gama 瓦片地图 素材的方法集合
     getByCSX : function
     getById : function
 
-
-▼ gama.texture2D* : object
+▼ gama.texture2D : object                         -- [内部模块] 用于异步加载纹理素材和将纹理素材转换为 Cocos2d-x 的动作帧
     getById : function
     getFromJSON : function
     makeSpriteFrames : function
-
-▼ window* : object
-    DUMMY_CALLBACK : function
-    cleanup : function
-    fromhex : function
-    getTypeById : function
-    loadById : function
-    playSoundFx : function
-    readJSON : function
-    readJSONAsync : function
-    soundFX2Action : function
 
 ```
 
